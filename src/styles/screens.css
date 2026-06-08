@@ -9,29 +9,8 @@
   flex-direction: column;
   height: 100%;
   position: relative;
-}
-
-/* ---------- status bar ---------- */
-.statusbar {
-  height: 50px;
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 26px 0 30px;
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--c-ink);
-  letter-spacing: 0.02em;
-}
-.statusbar .sb-icons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.statusbar svg {
-  display: block;
+  /* clear the iOS status bar when launched from the home screen */
+  padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
 }
 
 /* ---------- scroll region ---------- */
@@ -39,7 +18,8 @@
   flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 6px 22px 116px;
+  /* bottom padding clears the floating tab bar + home indicator */
+  padding: 6px 22px calc(116px + env(safe-area-inset-bottom, 0px));
   scrollbar-width: none;
 }
 .screen-scroll::-webkit-scrollbar {
@@ -900,7 +880,7 @@
   bottom: 0;
   transform: translateX(-50%);
   width: calc(100% - 28px);
-  margin-bottom: 14px;
+  margin-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   height: 64px;
   background: var(--c-surface);
   border: var(--card-border);
@@ -962,7 +942,7 @@
 .toast {
   position: absolute;
   left: 50%;
-  bottom: 92px;
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%) translateY(12px);
   background: var(--c-ink);
   color: var(--c-bg);

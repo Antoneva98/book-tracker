@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import type { Screen } from "./types";
 import type { AppCtx } from "./ctx";
 import { useBookStore } from "./data/store";
-import { StatusBar } from "./components/StatusBar";
 import { TabBar } from "./components/TabBar";
 import { Icon } from "./components/Icon";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -74,7 +73,6 @@ export default function App() {
       </button>
 
       <div className="screen">
-        <StatusBar />
         <div
           className="screen-scroll-host"
           style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}

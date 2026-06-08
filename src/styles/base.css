@@ -1,7 +1,8 @@
 /* ============================================================
-   App shell & layout. The reference renders a fixed 384×812 phone
-   on a board; here we keep that framed look on large screens but
-   let the app fill the viewport on real phones.
+   App shell & layout. The app is a mobile-first column that fills the
+   viewport on phones and sits as a centered, framed card on desktop —
+   no faux phone chrome, no empty void. Works as an "Add to Home Screen"
+   PWA (safe-area insets handle the iOS status bar / home indicator).
    ============================================================ */
 
 *,
@@ -21,77 +22,66 @@ body {
   font-family: "Manrope", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  background: #e9eaee;
-  color: #1a1c22;
+  /* surrounds the app card on desktop; a touch darker than the app bg */
+  background: #e7ebf5;
+  color: #131a2b;
 }
-
-/* board background behind the framed phone (desktop) */
-.board {
-  --board-grid: rgba(20, 22, 30, 0.05);
-  min-height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background:
-    linear-gradient(var(--board-grid) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(90deg, var(--board-grid) 1px, transparent 1px) 0 0 / 28px 28px,
-    #e9eaee;
-}
-
 html[data-theme="dark"] body {
-  background: #05070d;
-}
-html[data-theme="dark"] .board {
-  --board-grid: rgba(255, 255, 255, 0.04);
-  background:
-    linear-gradient(var(--board-grid) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(90deg, var(--board-grid) 1px, transparent 1px) 0 0 / 28px 28px,
-    #05070d;
+  background: #070b14;
+  color: #eef2fb;
 }
 
-/* ---------- phone shell ---------- */
+/* outer wrapper */
+.board {
+  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+/* ---------- the app column ---------- */
 .phone {
   position: relative;
-  width: 384px;
-  height: 812px;
-  max-height: 100%;
-  flex: 0 0 auto;
-  border-radius: 40px;
-  overflow: hidden;
+  width: 100%;
+  max-width: 440px;
+  min-height: 100dvh;
   background: var(--c-bg);
   color: var(--c-ink);
   font-family: var(--font-body);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.6) inset,
-    0 30px 60px -24px rgba(15, 18, 30, 0.45),
-    0 4px 12px rgba(15, 18, 30, 0.12);
   display: flex;
   flex-direction: column;
   isolation: isolate;
   transition: background 240ms ease, color 240ms ease;
 }
 
-/* On real phones / narrow viewports the app fills the screen edge-to-edge. */
-@media (max-width: 480px) {
+/* desktop: center a framed app card on the soft backdrop */
+@media (min-width: 480px) {
   .board {
-    padding: 0;
-    align-items: stretch;
+    align-items: center;
+    padding: 24px;
   }
   .phone {
-    width: 100%;
-    height: 100dvh;
-    max-height: none;
-    border-radius: 0;
-    box-shadow: none;
+    min-height: 0;
+    height: min(900px, calc(100dvh - 48px));
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow:
+      0 30px 60px -24px rgba(15, 18, 30, 0.35),
+      0 4px 12px rgba(15, 18, 30, 0.1);
+  }
+  html[data-theme="dark"] .phone {
+    box-shadow:
+      0 30px 60px -24px rgba(0, 0, 0, 0.7),
+      0 0 0 1px rgba(255, 255, 255, 0.04);
   }
 }
 
 /* ---------- floating theme toggle ---------- */
 .theme-toggle {
   position: absolute;
-  top: 12px;
-  right: 22px;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: 18px;
   z-index: 50;
   width: 34px;
   height: 34px;
