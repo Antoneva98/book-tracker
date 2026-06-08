@@ -28,6 +28,7 @@ export const ICON_PATHS = {
   sun: "M12 4V2M12 22v-2M5 5 3.5 3.5M20.5 20.5 19 19M4 12H2M22 12h-2M5 19l-1.5 1.5M20.5 3.5 19 5M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
   share: "M4 12v8h16v-8M12 16V4M8 8l4-4 4 4",
   x: "M18 6 6 18M6 6l12 12",
+  trash: "M4 7h16M10 7V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2M6 7l1 13h10l1-13M10 11v6M14 11v6",
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

@@ -14,6 +14,7 @@ import { DetailScreen } from "./screens/DetailScreen";
 import { AnalyticsScreen } from "./screens/AnalyticsScreen";
 import { NotesScreen } from "./screens/NotesScreen";
 import { InsightsScreen } from "./screens/InsightsScreen";
+import { AddBookScreen } from "./screens/AddBookScreen";
 
 type Theme = "light" | "dark";
 const THEME_KEY = "svitlo-theme";
@@ -58,8 +59,9 @@ export default function App() {
 
   const ctx: AppCtx = { ...store, nav, openBook, back, detailId };
 
-  // Book detail is a sub-view of Library — keep that tab highlighted.
-  const navActive: Screen = screen === "detail" ? "library" : screen;
+  // Book detail & add-book are sub-views of Library — keep that tab lit.
+  const navActive: Screen =
+    screen === "detail" || screen === "addbook" ? "library" : screen;
 
   return (
     <div className="phone" data-theme={theme}>
@@ -84,6 +86,7 @@ export default function App() {
           {screen === "analytics" && <AnalyticsScreen ctx={ctx} />}
           {screen === "notes" && <NotesScreen ctx={ctx} />}
           {screen === "insights" && <InsightsScreen ctx={ctx} />}
+          {screen === "addbook" && <AddBookScreen ctx={ctx} />}
         </div>
         <div className="toast" data-show={!!store.toastMsg}>
           {store.toastMsg}

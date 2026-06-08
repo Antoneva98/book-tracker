@@ -16,12 +16,13 @@ const NOTE_TYPES: { id: NoteType; label: string }[] = [
 type Filter = "all" | NoteType;
 
 export function NotesScreen({ ctx }: { ctx: AppCtx }) {
-  const { notes, addNote, books } = ctx;
+  const { notes, addNote, deleteNote, books, current } = ctx;
   const [type, setType] = useState<NoteType>("idea");
   const [text, setText] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
   const list = notes.filter((n) => filter === "all" || n.type === filter);
+  const canAdd = !!text.trim() && !!current;
 
   return (
     <div className="screen-scroll fade-up">
@@ -48,8 +49,8 @@ export function NotesScreen({ ctx }: { ctx: AppCtx }) {
         />
         <button
           className="btn btn-primary"
-          disabled={!text.trim()}
-          style={{ opacity: text.trim() ? 1 : 0.5 }}
+          disabled={!canAdd}
+          style={{ opacity: canAdd ? 1 : 0.5 }}
           onClick={() => {
             addNote(type, text.trim());
             setText("");
@@ -57,6 +58,11 @@ export function NotesScreen({ ctx }: { ctx: AppCtx }) {
         >
           <Icon name="plus" size={17} sw={2.4} /> {t.addNote}
         </button>
+        {!current && (
+          <div style={{ color: "var(--c-ink-3)", fontSize: 12.5, marginTop: 10 }}>
+            {t.emptyLibrary}
+          </div>
+        )}
       </div>
 
       <div className="chip-row mt-5">
@@ -81,7 +87,7 @@ export function NotesScreen({ ctx }: { ctx: AppCtx }) {
 
       <div className="stack gap-3 mt-4">
         {list.map((n) => (
-          <NoteCard key={n.id} note={n} books={books} />
+          <NoteCard key={n.id} note={n} books={books} onDelete={deleteNote} />
         ))}
         {list.length === 0 && (
           <div

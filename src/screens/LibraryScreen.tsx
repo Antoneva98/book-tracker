@@ -19,7 +19,7 @@ const LIB_FILTERS: { id: Filter; label: string }[] = [
 ];
 
 export function LibraryScreen({ ctx }: { ctx: AppCtx }) {
-  const { books, openBook, toast } = ctx;
+  const { books, openBook, nav } = ctx;
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
 
@@ -35,8 +35,8 @@ export function LibraryScreen({ ctx }: { ctx: AppCtx }) {
         <h1 className="h-title">{t.library}</h1>
         <button
           className="fab"
-          aria-label={t.addNote}
-          onClick={() => toast(t.addBookToast)}
+          aria-label={t.addFirstBook}
+          onClick={() => nav("addbook")}
         >
           <Icon name="plus" size={22} sw={2.4} />
         </button>
@@ -103,7 +103,7 @@ export function LibraryScreen({ ctx }: { ctx: AppCtx }) {
               fontSize: 14,
             }}
           >
-            {t.nothingFound}
+            {books.length === 0 ? t.emptyLibrary : t.nothingFound}
           </div>
         )}
       </div>

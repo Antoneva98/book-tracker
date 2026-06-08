@@ -1,23 +1,24 @@
 // Persisted application state. The activity log (date → pages) is the
-// source of truth for streak/analytics/insights, so it is stored even
-// though most screens read derived values. Persistence is localStorage.
+// source of truth for streak/analytics/insights. Persistence is localStorage.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Activity, Book, Note, NoteType } from "../types";
+import type { Activity, Book, BookStatus, Note, NoteType } from "../types";
 import { t } from "../i18n/uk";
 import {
   buildSeedActivity,
+  coverFor,
   daysAgo,
   iso,
   SEED_BOOKS,
-  SEED_MONTHLY,
   SEED_NOTES,
+  TODAY,
 } from "./seed";
-import { baseStreak } from "./derive";
+import { baseStreak, booksCompletedInYear } from "./derive";
 
 const STORAGE_KEY = "svitlo-book-tracker";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2; // bumped: empty library + CRUD
 const TODAY_ISO = iso(daysAgo(0));
+const YEAR = TODAY.getFullYear();
 
 interface Persisted {
   version: number;
@@ -49,12 +50,22 @@ function loadState(): Persisted {
   }
 }
 
+export interface AddBookInput {
+  title: string;
+  author: string;
+  pages: number;
+  status: BookStatus;
+  genre: string;
+  read: number;
+  rating: number | null;
+}
+
 export interface BookStore {
   books: Book[];
   notes: Note[];
   activity: Activity;
-  current: Book;
-  currentId: string;
+  current: Book | null;
+  currentId: string | null;
   streak: number;
   doneToday: boolean;
   finishedThisYear: number;
@@ -63,6 +74,9 @@ export interface BookStore {
   logReading: (pages: number) => void;
   updateProgress: (id: string, val: number) => void;
   addNote: (type: NoteType, text: string) => void;
+  deleteNote: (id: string) => void;
+  addBook: (input: AddBookInput) => string;
+  deleteBook: (id: string) => void;
   notesFor: (id: string) => Note[];
   toast: (msg: string) => void;
   resetData: () => void;
@@ -73,23 +87,22 @@ export function useBookStore(): BookStore {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Persist on every change.
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
-      /* storage unavailable (private mode) — run in-memory */
+      /* storage unavailable — run in-memory */
     }
   }, [state]);
 
   const { books, notes, activity, doneToday } = state;
 
   const currentId = useMemo(
-    () => books.find((b) => b.status === "reading")?.id ?? books[0].id,
+    () => books.find((b) => b.status === "reading")?.id ?? books[0]?.id ?? null,
     [books],
   );
   const current = useMemo(
-    () => books.find((b) => b.id === currentId) ?? books[0],
+    () => books.find((b) => b.id === currentId) ?? null,
     [books, currentId],
   );
   const streak = useMemo(
@@ -97,8 +110,8 @@ export function useBookStore(): BookStore {
     [activity, doneToday],
   );
   const finishedThisYear = useMemo(
-    () => SEED_MONTHLY.reduce((s, d) => s + d.books, 0),
-    [],
+    () => booksCompletedInYear(books, YEAR),
+    [books],
   );
 
   const toast = useCallback((msg: string) => {
@@ -107,25 +120,26 @@ export function useBookStore(): BookStore {
     toastTimer.current = setTimeout(() => setToastMsg(null), 1900);
   }, []);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
-    };
-  }, []);
+    },
+    [],
+  );
 
   const logReading = useCallback(
     (pages: number) => {
       setState((prev) => {
-        const cId = prev.books.find((b) => b.status === "reading")?.id ??
-          prev.books[0].id;
+        const cId = prev.books.find((b) => b.status === "reading")?.id;
         return {
           ...prev,
-          books: prev.books.map((b) =>
-            b.id === cId
-              ? { ...b, read: Math.min(b.pages, b.read + pages) }
-              : b,
-          ),
-          // activity log is the source of truth — record today's pages
+          books: cId
+            ? prev.books.map((b) =>
+                b.id === cId
+                  ? { ...b, read: Math.min(b.pages, b.read + pages) }
+                  : b,
+              )
+            : prev.books,
           activity: {
             ...prev.activity,
             [TODAY_ISO]: (prev.activity[TODAY_ISO] || 0) + pages,
@@ -164,10 +178,11 @@ export function useBookStore(): BookStore {
     (type: NoteType, text: string) => {
       setState((prev) => {
         const cId = prev.books.find((b) => b.status === "reading")?.id ??
-          prev.books[0].id;
+          prev.books[0]?.id;
+        if (!cId) return prev;
         const page = prev.books.find((b) => b.id === cId)?.read ?? 0;
         const note: Note = {
-          id: "u" + Date.now(),
+          id: "n" + Date.now(),
           bookId: cId,
           type,
           page,
@@ -181,6 +196,54 @@ export function useBookStore(): BookStore {
     [toast],
   );
 
+  const deleteNote = useCallback(
+    (id: string) => {
+      setState((prev) => ({
+        ...prev,
+        notes: prev.notes.filter((n) => n.id !== id),
+      }));
+      toast(t.noteDeletedToast);
+    },
+    [toast],
+  );
+
+  const addBook = useCallback(
+    (input: AddBookInput): string => {
+      const id = "b" + Date.now();
+      const isDone = input.status === "completed";
+      const book: Book = {
+        id,
+        title: input.title,
+        author: input.author,
+        pages: input.pages,
+        read: isDone ? input.pages : Math.min(input.read, input.pages),
+        status: input.status,
+        genre: input.genre || "—",
+        start: input.status === "toread" ? null : TODAY_ISO,
+        finish: isDone ? TODAY_ISO : null,
+        rating: input.rating,
+        cover: coverFor(input.title + input.author),
+        blurb: "",
+      };
+      setState((prev) => ({ ...prev, books: [book, ...prev.books] }));
+      toast(t.bookAddedToast);
+      return id;
+    },
+    [toast],
+  );
+
+  const deleteBook = useCallback(
+    (id: string) => {
+      setState((prev) => ({
+        ...prev,
+        books: prev.books.filter((b) => b.id !== id),
+        notes: prev.notes.filter((n) => n.bookId !== id),
+      }));
+      toast(t.bookDeletedToast);
+    },
+    [toast],
+  );
+
   const notesFor = useCallback(
     (id: string) => notes.filter((n) => n.bookId === id),
     [notes],
@@ -188,7 +251,7 @@ export function useBookStore(): BookStore {
 
   const resetData = useCallback(() => {
     setState(seedState());
-    toast("Дані скинуто");
+    toast(t.dataResetToast);
   }, [toast]);
 
   return {
@@ -204,6 +267,9 @@ export function useBookStore(): BookStore {
     logReading,
     updateProgress,
     addNote,
+    deleteNote,
+    addBook,
+    deleteBook,
     notesFor,
     toast,
     resetData,

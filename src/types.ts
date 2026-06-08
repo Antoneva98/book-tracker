@@ -9,7 +9,8 @@ export type Screen =
   | "detail"
   | "analytics"
   | "notes"
-  | "insights";
+  | "insights"
+  | "addbook";
 
 export interface Cover {
   bg: string;

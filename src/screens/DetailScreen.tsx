@@ -11,7 +11,8 @@ import { fmtDate } from "../lib/format";
 import { t } from "../i18n/uk";
 
 export function DetailScreen({ ctx }: { ctx: AppCtx }) {
-  const { books, detailId, back, updateProgress, notesFor, nav, toast } = ctx;
+  const { books, detailId, back, updateProgress, deleteBook, notesFor, nav, toast } =
+    ctx;
   const book = books.find((b) => b.id === detailId);
   const [val, setVal] = useState(book ? book.read : 0);
 
@@ -133,6 +134,18 @@ export function DetailScreen({ ctx }: { ctx: AppCtx }) {
           <Icon name="plus" size={17} sw={2.2} /> {t.addNote}
         </button>
       </div>
+
+      <button
+        className="btn btn-danger mt-6"
+        onClick={() => {
+          if (window.confirm(t.deleteBookConfirm)) {
+            deleteBook(book.id);
+            back();
+          }
+        }}
+      >
+        <Icon name="trash" size={17} sw={2} /> {t.deleteBook}
+      </button>
     </div>
   );
 }

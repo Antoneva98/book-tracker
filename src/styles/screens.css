@@ -760,6 +760,104 @@
   color: #fff;
 }
 
+/* ---------- form fields (add book) ---------- */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.form-label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-3);
+}
+.form-label .opt {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  color: var(--c-ink-3);
+  opacity: 0.7;
+}
+.form-input {
+  width: 100%;
+  border: 1.5px solid var(--c-line-strong);
+  background: var(--c-surface-2);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--c-ink);
+  outline: none;
+  transition: border-color 140ms;
+}
+.form-input::placeholder {
+  color: var(--c-ink-3);
+}
+.form-input:focus {
+  border-color: var(--c-accent);
+}
+.form-input.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+.rating-pick {
+  display: inline-flex;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--c-warn);
+}
+
+/* destructive button */
+.btn-danger {
+  background: var(--c-surface-2);
+  color: var(--c-bad);
+}
+
+/* note delete button */
+.note-del {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--c-ink-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: color 140ms, background 140ms;
+}
+.note-del:hover {
+  color: var(--c-bad);
+  background: color-mix(in srgb, var(--c-bad) 12%, transparent);
+}
+
+/* generic empty state */
+.empty-state {
+  text-align: center;
+  padding: 28px 16px;
+}
+.empty-state .es-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--c-ink);
+}
+.empty-state .es-sub {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--c-ink-3);
+  margin-top: 6px;
+}
+
 /* ---------- insights ---------- */
 .insight {
   background: var(--c-surface);

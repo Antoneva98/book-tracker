@@ -89,9 +89,47 @@ const uk = {
   // misc
   pagesUnit: "стор.",
   pageAbbr: "с.",
-  loggedToast: (n: number) => `Записано! +${n} ${"стор."} сьогодні`,
+  loggedToast: (n: number) => `Записано! +${n} стор. сьогодні`,
   progressUpdatedToast: "Прогрес оновлено",
   bookCompletedToast: "Книгу завершено 🎉",
+  bookAddedToast: "Книгу додано",
+  bookDeletedToast: "Книгу видалено",
+  noteDeletedToast: "Нотатку видалено",
+  dataResetToast: "Дані скинуто",
+
+  // add book form
+  addBookTitle: "Нова книга",
+  fldTitle: "Назва",
+  fldAuthor: "Автор",
+  fldPages: "Сторінок",
+  fldGenre: "Жанр",
+  fldStatus: "Статус",
+  fldCurrentPage: "Прочитано сторінок",
+  fldRating: "Оцінка",
+  fldTitlePh: "Назва книги",
+  fldAuthorPh: "Ім'я автора",
+  fldGenrePh: "напр. Роман, Нон-фікшн…",
+  optional: "необов'язково",
+  saveBook: "Зберегти книгу",
+  cancel: "Скасувати",
+
+  // delete
+  deleteBook: "Видалити книгу",
+  deleteBookConfirm: "Видалити цю книгу та її нотатки? Цю дію не можна скасувати.",
+  deleteNoteAria: "Видалити нотатку",
+
+  // empty states
+  emptyHomeTitle: "Почни з першої книги",
+  emptyHomeSub: "Додай книгу, яку зараз читаєш, — і щодня відмічай прогрес.",
+  addFirstBook: "Додати книгу",
+  emptyLibrary: "Бібліотека порожня. Додай першу книгу кнопкою «+».",
+  insightsEmpty: "Спостереження з'являться, коли ти трохи почитаєш. Без поспіху.",
+
+  // analytics — yearly history
+  byYears: "За роками",
+  totalRead: "Усього прочитано",
+  booksWord: "книг",
+  beforeAppNote: "Книги до 2025 — з твого читацького архіву.",
 
   // months (short, for dates)
   monthsShort: [
