@@ -1,0 +1,68 @@
+/* ============================================================
+   Book Tracker — "Світло" theme tokens (light + dark)
+   The only theme in this handoff. Port these into your codebase
+   (CSS variables, Tailwind config, design-token JSON — whatever
+   your project uses). Screen components consume the --c-* vars
+   below, so they stay theme-agnostic.
+   ============================================================ */
+
+.phone {
+  /* structural */
+  --radius:      22px;   /* cards, search, segmented control thumb */
+  --radius-sm:   14px;   /* list rows, meta cells, notes */
+  --radius-lg:   30px;   /* tab bar */
+  --radius-pill: 999px;  /* buttons, chips, progress */
+
+  --font-display: "Manrope", system-ui, sans-serif;  /* headings + UI labels */
+  --font-body:    "Manrope", system-ui, sans-serif;  /* body copy */
+  --font-num:     "JetBrains Mono", ui-monospace, monospace; /* numbers, dates, % */
+
+  --eyebrow-tracking: 0.14em;
+  --title-weight: 800;
+}
+
+/* ---------- LIGHT (default) ---------- */
+.phone[data-theme="light"] {
+  --c-bg:          #eef1f8;  /* app background */
+  --c-surface:     #ffffff;  /* cards */
+  --c-surface-2:   #f3f5fb;  /* insets: progress track, search, steppers */
+  --c-ink:         #131a2b;  /* primary text */
+  --c-ink-2:       #5a6478;  /* secondary text */
+  --c-ink-3:       #95a0b6;  /* tertiary / placeholders / captions */
+  --c-line:        rgba(19, 26, 43, 0.07);  /* hairlines */
+  --c-line-strong: rgba(19, 26, 43, 0.14);  /* stepper border, dividers */
+
+  --c-accent:      #2f5bff;  /* royal blue — primary actions, active states */
+  --c-accent-ink:  #ffffff;  /* text/icon on accent fills */
+  --c-accent-soft: rgba(47, 91, 255, 0.12); /* idea-note tag bg, insight icon bg */
+
+  --c-warn: #f0992b;  /* streak ring, quote-note tag, heat dots */
+  --c-good: #2b9d6e;  /* completed status, "read today" confirm */
+  --c-bad:  #e05656;  /* abandoned status */
+
+  --shadow:    0 2px 10px rgba(19, 26, 43, 0.05);          /* cards */
+  --shadow-lg: 0 22px 48px -18px rgba(40, 60, 140, 0.28);  /* tab bar, toast */
+}
+
+/* ---------- DARK ---------- */
+.phone[data-theme="dark"] {
+  --c-bg:          #0c1120;
+  --c-surface:     #141a2c;
+  --c-surface-2:   #1b2236;
+  --c-ink:         #eef2fb;
+  --c-ink-2:       #aab3c9;
+  --c-ink-3:       #6c768e;
+  --c-line:        rgba(255, 255, 255, 0.08);
+  --c-line-strong: rgba(255, 255, 255, 0.16);
+
+  --c-accent:      #5b82ff;  /* lifts on dark */
+  --c-accent-ink:  #07101f;
+  --c-accent-soft: rgba(91, 130, 255, 0.16);
+
+  --c-warn: #f0b04a;
+  --c-good: #2b9d6e;
+  --c-bad:  #e05656;
+
+  --shadow:    0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 22px 48px -18px rgba(0, 0, 0, 0.6);
+}
