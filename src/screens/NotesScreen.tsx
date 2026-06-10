@@ -1,6 +1,6 @@
 // NOTES / Нотатки — fast reflection. Notes are typed: Ідея / Цитата / Застосування.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { AppCtx } from "../ctx";
 import type { NoteType } from "../types";
 import { Icon } from "../components/Icon";
@@ -19,7 +19,13 @@ export function NotesScreen({ ctx }: { ctx: AppCtx }) {
   const { notes, addNote, deleteNote, books, current } = ctx;
   const [type, setType] = useState<NoteType>("idea");
   const [text, setText] = useState("");
+  const [page, setPage] = useState(current?.read ?? 0);
   const [filter, setFilter] = useState<Filter>("all");
+
+  // Default the page to the current book's progress; re-sync on book switch.
+  useEffect(() => {
+    setPage(current?.read ?? 0);
+  }, [current?.id]);
 
   const list = notes.filter((n) => filter === "all" || n.type === filter);
   const canAdd = !!text.trim() && !!current;
@@ -47,12 +53,32 @@ export function NotesScreen({ ctx }: { ctx: AppCtx }) {
           onChange={(e) => setText(e.target.value)}
           placeholder={t.composerPlaceholder}
         />
+        {current && (
+          <div className="note-page-row mt-3">
+            <label className="form-label" htmlFor="note-page">
+              {t.notePage}
+            </label>
+            <input
+              id="note-page"
+              className="form-input num"
+              type="number"
+              min={0}
+              max={current.pages}
+              value={page}
+              onChange={(e) =>
+                setPage(
+                  Math.max(0, Math.min(current.pages, Number(e.target.value) || 0)),
+                )
+              }
+            />
+          </div>
+        )}
         <button
-          className="btn btn-primary"
+          className="btn btn-primary mt-3"
           disabled={!canAdd}
           style={{ opacity: canAdd ? 1 : 0.5 }}
           onClick={() => {
-            addNote(type, text.trim());
+            addNote(type, text.trim(), page);
             setText("");
           }}
         >

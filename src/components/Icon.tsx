@@ -29,6 +29,7 @@ export const ICON_PATHS = {
   share: "M4 12v8h16v-8M12 16V4M8 8l4-4 4 4",
   x: "M18 6 6 18M6 6l12 12",
   trash: "M4 7h16M10 7V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2M6 7l1 13h10l1-13M10 11v6M14 11v6",
+  logout: "M16 17l5-5-5-5M21 12H9M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4",
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

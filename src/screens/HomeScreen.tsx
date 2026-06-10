@@ -57,7 +57,7 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
           aria-label={t.signOut}
           title={t.signOut}
         >
-          <Icon name="spark" size={17} />
+          <Icon name="logout" size={17} />
         </button>
       </div>
 

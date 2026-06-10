@@ -69,6 +69,7 @@ const uk = {
 
   // notes
   composerPlaceholder: "Запиши думку, цитату чи як це застосувати…",
+  notePage: "Сторінка",
   noteAddedToast: "Нотатку додано",
   noNotes: "Ще немає нотаток.",
   typeIdea: "Ідея",
