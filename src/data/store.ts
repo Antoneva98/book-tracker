@@ -1,52 +1,48 @@
-// Persisted application state. The activity log (date → pages) is the
-// source of truth for streak/analytics/insights. Persistence is localStorage.
+// Application state, backed by Supabase. The store keeps the same interface
+// screens already use; mutations update local state optimistically and write
+// through to the database, rolling back on failure.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Activity, Book, BookStatus, Note, NoteType } from "../types";
+import type {
+  Activity,
+  Book,
+  BookStatus,
+  Note,
+  NoteType,
+  YearStat,
+} from "../types";
 import { t } from "../i18n/uk";
-import {
-  buildSeedActivity,
-  coverFor,
-  daysAgo,
-  iso,
-  SEED_BOOKS,
-  SEED_NOTES,
-  TODAY,
-} from "./seed";
+import { coverFor, daysAgo, iso, TODAY, YEARLY_HISTORY } from "./seed";
 import { baseStreak, booksCompletedInYear } from "./derive";
+import * as repo from "./repo";
+import { runMigration } from "./migrate";
+import { signOut as authSignOut } from "../auth/useSession";
 
-const STORAGE_KEY = "svitlo-book-tracker";
-const STORAGE_VERSION = 2; // bumped: empty library + CRUD
+const LEGACY_KEY = "svitlo-book-tracker";
+const MIGRATED_KEY = "svitlo-migrated";
 const TODAY_ISO = iso(daysAgo(0));
 const YEAR = TODAY.getFullYear();
 
-interface Persisted {
-  version: number;
+const newId = (): string => crypto.randomUUID();
+
+interface LegacyPersisted {
   books: Book[];
   notes: Note[];
   activity: Activity;
-  doneToday: boolean;
 }
 
-function seedState(): Persisted {
-  return {
-    version: STORAGE_VERSION,
-    books: SEED_BOOKS.map((b) => ({ ...b, cover: { ...b.cover } })),
-    notes: SEED_NOTES.map((n) => ({ ...n })),
-    activity: buildSeedActivity(),
-    doneToday: false,
-  };
-}
-
-function loadState(): Persisted {
+function readLegacyLocal(): LegacyPersisted | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return seedState();
-    const parsed = JSON.parse(raw) as Persisted;
-    if (parsed.version !== STORAGE_VERSION) return seedState();
-    return parsed;
+    const raw = localStorage.getItem(LEGACY_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as Partial<LegacyPersisted>;
+    return {
+      books: p.books ?? [],
+      notes: p.notes ?? [],
+      activity: p.activity ?? {},
+    };
   } catch {
-    return seedState();
+    return null;
   }
 }
 
@@ -64,12 +60,16 @@ export interface BookStore {
   books: Book[];
   notes: Note[];
   activity: Activity;
+  yearStats: YearStat[];
   current: Book | null;
   currentId: string | null;
   streak: number;
   doneToday: boolean;
   finishedThisYear: number;
   toastMsg: string | null;
+  loading: boolean;
+  loadError: boolean;
+  migrationPrompt: boolean;
   // actions
   logReading: (pages: number) => void;
   updateProgress: (id: string, val: number) => void;
@@ -79,23 +79,71 @@ export interface BookStore {
   deleteBook: (id: string) => void;
   notesFor: (id: string) => Note[];
   toast: (msg: string) => void;
-  resetData: () => void;
+  reload: () => void;
+  confirmMigration: () => void;
+  skipMigration: () => void;
+  signOut: () => void;
 }
 
 export function useBookStore(): BookStore {
-  const [state, setState] = useState<Persisted>(loadState);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [activity, setActivity] = useState<Activity>({});
+  const [yearStats, setYearStats] = useState<YearStat[]>([]);
+  const [doneToday, setDoneToday] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [migrationPrompt, setMigrationPrompt] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      /* storage unavailable — run in-memory */
-    }
-  }, [state]);
+  const toast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToastMsg(null), 1900);
+  }, []);
+  useEffect(
+    () => () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    },
+    [],
+  );
 
-  const { books, notes, activity, doneToday } = state;
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const snap = await repo.fetchAll();
+      setBooks(snap.books);
+      setNotes(snap.notes);
+      setActivity(snap.activity);
+      setYearStats(snap.yearStats);
+      setDoneToday((snap.activity[TODAY_ISO] || 0) > 0);
+
+      const cloudEmpty =
+        snap.books.length === 0 &&
+        snap.notes.length === 0 &&
+        Object.keys(snap.activity).length === 0 &&
+        snap.yearStats.length === 0;
+      const already = localStorage.getItem(MIGRATED_KEY) === "1";
+      const legacy = readLegacyLocal();
+      const hasLegacy =
+        (legacy &&
+          (legacy.books.length > 0 ||
+            legacy.notes.length > 0 ||
+            Object.keys(legacy.activity).length > 0)) ||
+        YEARLY_HISTORY.length > 0;
+      if (cloudEmpty && !already && hasLegacy) setMigrationPrompt(true);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const currentId = useMemo(
     () => books.find((b) => b.status === "reading")?.id ?? books[0]?.id ?? null,
@@ -105,6 +153,8 @@ export function useBookStore(): BookStore {
     () => books.find((b) => b.id === currentId) ?? null,
     [books, currentId],
   );
+  // baseStreak counts consecutive days up to yesterday; today is added live
+  // via doneToday (which mirrors activity[TODAY_ISO] > 0) — same as before.
   const streak = useMemo(
     () => baseStreak(activity) + (doneToday ? 1 : 0),
     [activity, doneToday],
@@ -114,102 +164,110 @@ export function useBookStore(): BookStore {
     [books],
   );
 
-  const toast = useCallback((msg: string) => {
-    setToastMsg(msg);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToastMsg(null), 1900);
-  }, []);
-
-  useEffect(
-    () => () => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-    },
-    [],
-  );
-
   const logReading = useCallback(
     (pages: number) => {
-      setState((prev) => {
-        const cId = prev.books.find((b) => b.status === "reading")?.id;
-        return {
-          ...prev,
-          books: cId
-            ? prev.books.map((b) =>
-                b.id === cId
-                  ? { ...b, read: Math.min(b.pages, b.read + pages) }
-                  : b,
-              )
-            : prev.books,
-          activity: {
-            ...prev.activity,
-            [TODAY_ISO]: (prev.activity[TODAY_ISO] || 0) + pages,
-          },
-          doneToday: true,
-        };
-      });
+      const cBook = books.find((b) => b.status === "reading");
+      const prevBooks = books;
+      const prevActivity = activity;
+      const prevDone = doneToday;
+      const newTotal = (activity[TODAY_ISO] || 0) + pages;
+      if (cBook) {
+        setBooks((bs) =>
+          bs.map((b) =>
+            b.id === cBook.id
+              ? { ...b, read: Math.min(b.pages, b.read + pages) }
+              : b,
+          ),
+        );
+      }
+      setActivity((a) => ({ ...a, [TODAY_ISO]: newTotal }));
+      setDoneToday(true);
       toast(t.loggedToast(pages));
+      void (async () => {
+        try {
+          if (cBook) {
+            await repo.updateBook(cBook.id, {
+              read: Math.min(cBook.pages, cBook.read + pages),
+            });
+          }
+          await repo.setActivity(TODAY_ISO, newTotal);
+        } catch {
+          setBooks(prevBooks);
+          setActivity(prevActivity);
+          setDoneToday(prevDone);
+          toast(t.saveFailed);
+        }
+      })();
     },
-    [toast],
+    [books, activity, doneToday, toast],
   );
 
   const updateProgress = useCallback(
     (id: string, val: number) => {
-      let completed = false;
-      setState((prev) => ({
-        ...prev,
-        books: prev.books.map((b) => {
-          if (b.id !== id) return b;
-          const done = val >= b.pages;
-          if (done && b.status !== "completed") completed = true;
-          return {
-            ...b,
-            read: val,
-            status: done ? "completed" : b.status,
-            finish: done ? TODAY_ISO : b.finish,
-          };
-        }),
-      }));
-      toast(completed ? t.bookCompletedToast : t.progressUpdatedToast);
+      const target = books.find((b) => b.id === id);
+      if (!target) return;
+      const prevBooks = books;
+      const done = val >= target.pages;
+      const patch: Partial<Book> = {
+        read: val,
+        status: done ? "completed" : target.status,
+        finish: done ? TODAY_ISO : target.finish,
+      };
+      setBooks((bs) => bs.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+      toast(
+        done && target.status !== "completed"
+          ? t.bookCompletedToast
+          : t.progressUpdatedToast,
+      );
+      void repo.updateBook(id, patch).catch(() => {
+        setBooks(prevBooks);
+        toast(t.saveFailed);
+      });
     },
-    [toast],
+    [books, toast],
   );
 
   const addNote = useCallback(
     (type: NoteType, text: string) => {
-      setState((prev) => {
-        const cId = prev.books.find((b) => b.status === "reading")?.id ??
-          prev.books[0]?.id;
-        if (!cId) return prev;
-        const page = prev.books.find((b) => b.id === cId)?.read ?? 0;
-        const note: Note = {
-          id: "n" + Date.now(),
-          bookId: cId,
-          type,
-          page,
-          text,
-          date: TODAY_ISO,
-        };
-        return { ...prev, notes: [note, ...prev.notes] };
-      });
+      const cId =
+        books.find((b) => b.status === "reading")?.id ?? books[0]?.id;
+      if (!cId) return;
+      const page = books.find((b) => b.id === cId)?.read ?? 0;
+      const note: Note = {
+        id: newId(),
+        bookId: cId,
+        type,
+        page,
+        text,
+        date: TODAY_ISO,
+      };
+      const prevNotes = notes;
+      setNotes((ns) => [note, ...ns]);
       toast(t.noteAddedToast);
+      void repo.insertNote(note).catch(() => {
+        setNotes(prevNotes);
+        toast(t.saveFailed);
+      });
     },
-    [toast],
+    [books, notes, toast],
   );
 
   const deleteNote = useCallback(
     (id: string) => {
-      setState((prev) => ({
-        ...prev,
-        notes: prev.notes.filter((n) => n.id !== id),
-      }));
+      const prevNotes = notes;
+      setNotes((ns) => ns.filter((n) => n.id !== id));
       toast(t.noteDeletedToast);
+      void repo.deleteNote(id).catch(() => {
+        setNotes(prevNotes);
+        toast(t.saveFailed);
+      });
     },
-    [toast],
+    [notes, toast],
   );
 
   const addBook = useCallback(
     (input: AddBookInput): string => {
-      const id = "b" + Date.now();
+      const id = newId();
       const isDone = input.status === "completed";
       const book: Book = {
         id,
@@ -225,23 +283,32 @@ export function useBookStore(): BookStore {
         cover: coverFor(input.title + input.author),
         blurb: "",
       };
-      setState((prev) => ({ ...prev, books: [book, ...prev.books] }));
+      const prevBooks = books;
+      setBooks((bs) => [book, ...bs]);
       toast(t.bookAddedToast);
+      void repo.insertBook(book).catch(() => {
+        setBooks(prevBooks);
+        toast(t.saveFailed);
+      });
       return id;
     },
-    [toast],
+    [books, toast],
   );
 
   const deleteBook = useCallback(
     (id: string) => {
-      setState((prev) => ({
-        ...prev,
-        books: prev.books.filter((b) => b.id !== id),
-        notes: prev.notes.filter((n) => n.bookId !== id),
-      }));
+      const prevBooks = books;
+      const prevNotes = notes;
+      setBooks((bs) => bs.filter((b) => b.id !== id));
+      setNotes((ns) => ns.filter((n) => n.bookId !== id));
       toast(t.bookDeletedToast);
+      void repo.deleteBook(id).catch(() => {
+        setBooks(prevBooks);
+        setNotes(prevNotes);
+        toast(t.saveFailed);
+      });
     },
-    [toast],
+    [books, notes, toast],
   );
 
   const notesFor = useCallback(
@@ -249,21 +316,56 @@ export function useBookStore(): BookStore {
     [notes],
   );
 
-  const resetData = useCallback(() => {
-    setState(seedState());
-    toast(t.dataResetToast);
-  }, [toast]);
+  const confirmMigration = useCallback(() => {
+    setMigrationPrompt(false);
+    const legacy = readLegacyLocal() ?? { books: [], notes: [], activity: {} };
+    void (async () => {
+      try {
+        await runMigration({
+          local: legacy,
+          yearly: YEARLY_HISTORY,
+          newId,
+          insertBooks: repo.insertBooks,
+          insertNotes: repo.insertNotes,
+          setActivityBulk: repo.setActivityBulk,
+          upsertYearStats: repo.upsertYearStats,
+        });
+        localStorage.setItem(MIGRATED_KEY, "1");
+        toast(t.migrateDone);
+        await load();
+      } catch {
+        toast(t.migrateFailed);
+      }
+    })();
+  }, [load, toast]);
+
+  const skipMigration = useCallback(() => {
+    localStorage.setItem(MIGRATED_KEY, "1");
+    setMigrationPrompt(false);
+  }, []);
+
+  const reload = useCallback(() => {
+    void load();
+  }, [load]);
+
+  const signOut = useCallback(() => {
+    void authSignOut();
+  }, []);
 
   return {
     books,
     notes,
     activity,
+    yearStats,
     current,
     currentId,
     streak,
     doneToday,
     finishedThisYear,
     toastMsg,
+    loading,
+    loadError,
+    migrationPrompt,
     logReading,
     updateProgress,
     addNote,
@@ -272,6 +374,9 @@ export function useBookStore(): BookStore {
     deleteBook,
     notesFor,
     toast,
-    resetData,
+    reload,
+    confirmMigration,
+    skipMigration,
+    signOut,
   };
 }
