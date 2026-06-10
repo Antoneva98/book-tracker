@@ -21,6 +21,12 @@ export function DetailScreen({ ctx }: { ctx: AppCtx }) {
     // re-sync the stepper whenever the open book or its saved progress changes
   }, [detailId, book?.read]);
 
+  // If the open book vanishes (e.g. an optimistic add was rolled back after a
+  // failed write), return to the library instead of showing a blank screen.
+  useEffect(() => {
+    if (detailId && !book) back();
+  }, [detailId, book, back]);
+
   if (!book) return null;
   const notes = notesFor(book.id);
 

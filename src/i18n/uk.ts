@@ -169,6 +169,29 @@ const uk = {
     "П’ятниця",
     "Субота",
   ],
+
+  // auth
+  appName: "Світло",
+  loginTagline: "Твій тихий трекер читання",
+  signInGoogle: "Увійти через Google",
+  orDivider: "або",
+  emailPlaceholder: "твоя@пошта.com",
+  sendMagicLink: "Надіслати посилання",
+  magicLinkSent: "Перевір пошту — ми надіслали посилання для входу.",
+  signOut: "Вийти",
+  // loading / errors
+  loadingData: "Завантаження…",
+  offlineTitle: "Немає з’єднання",
+  offlineSub: "Не вдалося завантажити дані.",
+  retry: "Спробувати ще",
+  saveFailed: "Не вдалося зберегти, спробуй ще",
+  // migration
+  migrateTitle: "Перенести твої дані?",
+  migrateSub: "Ми знайшли збережені локально книги, нотатки й історію. Залити їх у твій акаунт?",
+  migrateConfirm: "Перенести",
+  migrateSkip: "Почати з чистого",
+  migrateDone: "Дані перенесено",
+  migrateFailed: "Не вдалося перенести дані",
 };
 
 export type Dict = typeof uk;

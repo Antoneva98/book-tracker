@@ -28,6 +28,7 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
     logReading,
     openBook,
     nav,
+    signOut,
   } = ctx;
   const [logging, setLogging] = useState(false);
   const [pages, setPages] = useState(20);
@@ -44,9 +45,20 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
 
   return (
     <div className="screen-scroll fade-up">
-      <div className="greet-head stack gap-2">
-        <span className="eyebrow muted">{dateLine}</span>
-        <h1 className="h-title">{greet}.</h1>
+      <div className="greet-head row-between">
+        <div className="stack gap-2">
+          <span className="eyebrow muted">{dateLine}</span>
+          <h1 className="h-title">{greet}.</h1>
+        </div>
+        <button
+          className="theme-toggle"
+          style={{ position: "static" }}
+          onClick={signOut}
+          aria-label={t.signOut}
+          title={t.signOut}
+        >
+          <Icon name="spark" size={17} />
+        </button>
       </div>
 
       {!current ? (

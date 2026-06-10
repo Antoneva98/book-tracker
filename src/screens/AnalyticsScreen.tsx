@@ -3,7 +3,8 @@
 
 import { useState, type CSSProperties } from "react";
 import type { AppCtx } from "../ctx";
-import { TODAY, YEARLY_HISTORY, type YearStat } from "../data/seed";
+import { TODAY } from "../data/seed";
+import type { YearStat } from "../types";
 import {
   heat,
   monthlyForYear,
@@ -32,9 +33,9 @@ export function AnalyticsScreen({ ctx }: { ctx: AppCtx }) {
   const booksThisYear = booksCompletedInYear(ctx.books, year);
   const thisMonth = monthly[monthIdx] ?? { pages: 0, books: 0 };
 
-  // yearly history = past archive + current year (live)
+  // yearly history = stored archive (per-user) + current year (live)
   const years: YearStat[] = [
-    ...YEARLY_HISTORY,
+    ...ctx.yearStats.filter((y) => y.year !== year),
     { year, books: booksThisYear, pages: pagesThisYear },
   ];
   const maxYear = Math.max(...years.map((y) => y.pages), 1);
