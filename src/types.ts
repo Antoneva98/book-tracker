@@ -60,3 +60,10 @@ export interface Insight {
   title: string;
   text: string;
 }
+
+/** Yearly reading totals (archive + current year). */
+export interface YearStat {
+  year: number;
+  books: number;
+  pages: number;
+}

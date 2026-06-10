@@ -2,7 +2,7 @@
 // their own books. Past reading (2019–2024) is kept as yearly totals for
 // the statistics screen. "Today" is anchored to 2026-06-08.
 
-import type { Book, Cover, CoverStyle, Note, Activity } from "../types";
+import type { Book, Cover, CoverStyle, Note, Activity, YearStat } from "../types";
 
 /** The app's "today" anchor. */
 export const TODAY = new Date("2026-06-08T09:00:00");
@@ -33,11 +33,7 @@ export function buildSeedActivity(): Activity {
  * `pages` = sum of their page counts (a few titles had no page count and
  * count as 0 pages but still as a finished book).
  */
-export interface YearStat {
-  year: number;
-  books: number;
-  pages: number;
-}
+export type { YearStat };
 export const YEARLY_HISTORY: YearStat[] = [
   { year: 2019, books: 28, pages: 6792 },
   { year: 2020, books: 12, pages: 2769 },
