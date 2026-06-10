@@ -6,6 +6,7 @@ import type { Activity, Book, Note, YearStat } from "../types";
 import {
   activityRowsToMap,
   bookToRow,
+  goalRowsToMap,
   noteToRow,
   rowToBook,
   rowToNote,
@@ -23,21 +24,39 @@ export interface Snapshot {
   notes: Note[];
   activity: Activity;
   yearStats: YearStat[];
+  goals: Record<number, number>;
 }
 
 export async function fetchAll(): Promise<Snapshot> {
-  const [books, notes, activity, years] = await Promise.all([
+  const [books, notes, activity, years, goals] = await Promise.all([
     supabase.from("books").select("*").order("created_at", { ascending: false }),
     supabase.from("notes").select("*").order("created_at", { ascending: false }),
     supabase.from("activity").select("day, pages"),
     supabase.from("year_stats").select("year, books, pages").order("year"),
+    supabase.from("goals").select("year, target"),
   ]);
   return {
     books: check(books.data, books.error).map(rowToBook),
     notes: check(notes.data, notes.error).map(rowToNote),
     activity: activityRowsToMap(check(activity.data, activity.error)),
     yearStats: check(years.data, years.error).map(rowToYearStat),
+    // tolerate a missing `goals` table so the app still loads before the
+    // optional goals migration has been run in Supabase.
+    goals: goals.error ? {} : goalRowsToMap(goals.data ?? []),
   };
+}
+
+/** Set (or clear) the yearly book goal. */
+export async function setGoal(year: number, target: number): Promise<void> {
+  const { error } = await supabase
+    .from("goals")
+    .upsert({ year, target }, { onConflict: "user_id,year" });
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteGoal(year: number): Promise<void> {
+  const { error } = await supabase.from("goals").delete().eq("year", year);
+  if (error) throw new Error(error.message);
 }
 
 export async function insertBook(book: Book): Promise<void> {

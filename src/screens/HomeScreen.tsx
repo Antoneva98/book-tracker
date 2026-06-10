@@ -17,6 +17,14 @@ const labelStyle: CSSProperties = {
   color: "var(--c-ink)",
 };
 
+const cardCol: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 10,
+  padding: 16,
+};
+
 export function HomeScreen({ ctx }: { ctx: AppCtx }) {
   const {
     books,
@@ -25,42 +33,30 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
     streak,
     doneToday,
     finishedThisYear,
+    goal,
     logReading,
     openBook,
     nav,
+    setGoal,
     signOut,
   } = ctx;
   const [logging, setLogging] = useState(false);
   const [pages, setPages] = useState(20);
+  const [editGoal, setEditGoal] = useState(false);
+  const [goalVal, setGoalVal] = useState(12);
 
-  const hour = TODAY.getHours();
-  const greet =
-    hour < 12 ? t.greetMorning : hour < 18 ? t.greetDay : t.greetEvening;
-  const insights = buildInsights(activity, books, TODAY.getFullYear());
+  const year = TODAY.getFullYear();
+  const insights = buildInsights(activity, books, year);
   const teaser = insights[0];
+  const goalRemaining = goal ? Math.max(0, goal - finishedThisYear) : 0;
 
-  const dateLine = `${t.weekdays[TODAY.getDay()]} · ${TODAY.getDate()} ${
-    t.monthsLong[TODAY.getMonth()]
-  }`;
+  function openGoalEditor() {
+    setGoalVal(goal ?? 12);
+    setEditGoal(true);
+  }
 
   return (
     <div className="screen-scroll fade-up">
-      <div className="greet-head row-between">
-        <div className="stack gap-2">
-          <span className="eyebrow muted">{dateLine}</span>
-          <h1 className="h-title">{greet}.</h1>
-        </div>
-        <button
-          className="theme-toggle"
-          style={{ position: "static" }}
-          onClick={signOut}
-          aria-label={t.signOut}
-          title={t.signOut}
-        >
-          <Icon name="logout" size={17} />
-        </button>
-      </div>
-
       {!current ? (
         /* empty library */
         <div className="card mt-5">
@@ -180,16 +176,7 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
         className="mt-4"
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
       >
-        <div
-          className="card"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 10,
-            padding: 16,
-          }}
-        >
+        <div className="card" style={cardCol}>
           <Ring
             value={streak}
             max={Math.max(7, streak)}
@@ -207,33 +194,76 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
             </div>
           </div>
         </div>
-        <div
+
+        <button
           className="card"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 10,
-            padding: 16,
-          }}
+          style={{ ...cardCol, border: "none", cursor: "pointer", textAlign: "center" }}
+          onClick={openGoalEditor}
         >
           <Ring
-            value={finishedThisYear}
-            max={12}
+            value={goal ? finishedThisYear : 0}
+            max={goal ?? 1}
             size={88}
             stroke={9}
             num={`${finishedThisYear}`}
-            label={t.goalOf(12)}
+            label={goal ? t.goalOf(goal) : t.goalNone}
             numSize={28}
           />
-          <div style={{ textAlign: "center" }}>
-            <div style={labelStyle}>{t.goalTitle}</div>
-            <div style={{ fontSize: 11.5, color: "var(--c-ink-3)", marginTop: 2 }}>
-              {t.goalAhead(Math.max(0, 12 - finishedThisYear))}
+          <div>
+            <div style={labelStyle}>{t.goalTitle(year)}</div>
+            <div
+              style={{
+                fontSize: 11.5,
+                color: goal ? "var(--c-ink-3)" : "var(--c-accent)",
+                fontWeight: goal ? 400 : 700,
+                marginTop: 2,
+              }}
+            >
+              {goal ? t.goalAhead(goalRemaining) : t.goalSetCta}
             </div>
           </div>
-        </div>
+        </button>
       </div>
+
+      {/* goal editor (inline) */}
+      {editGoal && (
+        <div className="card mt-4">
+          <span className="eyebrow">{t.goalEditTitle(year)}</span>
+          <div
+            className="mt-2"
+            style={{ fontSize: 13, color: "var(--c-ink-2)" }}
+          >
+            {t.goalQuestion}
+          </div>
+          <div className="stepper mt-3">
+            <button onClick={() => setGoalVal((v) => Math.max(1, v - 1))}>–</button>
+            <span className="sv">
+              {goalVal} {t.booksUnitShort}
+            </span>
+            <button onClick={() => setGoalVal((v) => v + 1)}>+</button>
+          </div>
+          <button
+            className="btn btn-primary mt-3"
+            onClick={() => {
+              setGoal(goalVal);
+              setEditGoal(false);
+            }}
+          >
+            {t.save}
+          </button>
+          {goal != null && (
+            <button
+              className="btn btn-ghost mt-2"
+              onClick={() => {
+                setGoal(null);
+                setEditGoal(false);
+              }}
+            >
+              {t.goalRemove}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* soft insight teaser */}
       {teaser && (
@@ -255,6 +285,15 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
           </div>
         </button>
       )}
+
+      {/* sign out */}
+      <button
+        className="btn btn-ghost mt-6"
+        style={{ color: "var(--c-ink-3)" }}
+        onClick={signOut}
+      >
+        <Icon name="logout" size={16} /> {t.signOut}
+      </button>
     </div>
   );
 }

@@ -66,6 +66,7 @@ export interface BookStore {
   streak: number;
   doneToday: boolean;
   finishedThisYear: number;
+  goal: number | null;
   toastMsg: string | null;
   loading: boolean;
   loadError: boolean;
@@ -77,6 +78,7 @@ export interface BookStore {
   deleteNote: (id: string) => void;
   addBook: (input: AddBookInput) => string;
   deleteBook: (id: string) => void;
+  setGoal: (target: number | null) => void;
   notesFor: (id: string) => Note[];
   toast: (msg: string) => void;
   reload: () => void;
@@ -90,6 +92,7 @@ export function useBookStore(): BookStore {
   const [notes, setNotes] = useState<Note[]>([]);
   const [activity, setActivity] = useState<Activity>({});
   const [yearStats, setYearStats] = useState<YearStat[]>([]);
+  const [goals, setGoals] = useState<Record<number, number>>({});
   const [doneToday, setDoneToday] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -118,6 +121,7 @@ export function useBookStore(): BookStore {
       setNotes(snap.notes);
       setActivity(snap.activity);
       setYearStats(snap.yearStats);
+      setGoals(snap.goals);
       setDoneToday((snap.activity[TODAY_ISO] || 0) > 0);
 
       const cloudEmpty =
@@ -163,6 +167,7 @@ export function useBookStore(): BookStore {
     () => booksCompletedInYear(books, YEAR),
     [books],
   );
+  const goal = goals[YEAR] ?? null;
 
   const logReading = useCallback(
     (pages: number) => {
@@ -310,6 +315,29 @@ export function useBookStore(): BookStore {
     [books, notes, toast],
   );
 
+  const setGoal = useCallback(
+    (target: number | null) => {
+      const prev = goals;
+      setGoals((g) => {
+        const next = { ...g };
+        if (target == null) delete next[YEAR];
+        else next[YEAR] = target;
+        return next;
+      });
+      toast(t.goalSavedToast);
+      void (async () => {
+        try {
+          if (target == null) await repo.deleteGoal(YEAR);
+          else await repo.setGoal(YEAR, target);
+        } catch {
+          setGoals(prev);
+          toast(t.saveFailed);
+        }
+      })();
+    },
+    [goals, toast],
+  );
+
   const notesFor = useCallback(
     (id: string) => notes.filter((n) => n.bookId === id),
     [notes],
@@ -361,6 +389,7 @@ export function useBookStore(): BookStore {
     streak,
     doneToday,
     finishedThisYear,
+    goal,
     toastMsg,
     loading,
     loadError,
@@ -371,6 +400,7 @@ export function useBookStore(): BookStore {
     deleteNote,
     addBook,
     deleteBook,
+    setGoal,
     notesFor,
     toast,
     reload,

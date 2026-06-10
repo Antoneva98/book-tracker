@@ -45,6 +45,10 @@ html[data-theme="dark"] body {
   position: relative;
   width: 100%;
   max-width: 440px;
+  /* a DEFINITE height so the inner .screen-scroll bounds itself and scrolls
+     internally — otherwise tall screens (Statistics) grow the whole column
+     and the floating tab bar gets pushed below the viewport. */
+  height: 100dvh;
   min-height: 100dvh;
   background: var(--c-bg);
   color: var(--c-ink);

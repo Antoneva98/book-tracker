@@ -183,3 +183,26 @@ create index on public.notes (book_id);
 ## Вартість
 Безкоштовного тарифу Supabase достатньо для особистого користування та друзів
 (ліміти на розмір БД і активних користувачів — щедрі для такого застосунку).
+
+---
+
+## Оновлення: таблиця `goals` (ціль на рік)
+
+Для функції «Ціль на рік» потрібна ще одна таблиця. Виконай цей SQL у
+**SQL Editor → New query → Run** (одноразово):
+
+```sql
+create table public.goals (
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  year    int  not null,
+  target  int  not null,
+  primary key (user_id, year)
+);
+alter table public.goals enable row level security;
+create policy "own goals" on public.goals
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+```
+
+Поки таблиці немає, застосунок працює як завжди, лише збереження цілі покаже
+«не вдалося зберегти». Після створення таблиці ціль зберігатиметься й
+синхронізуватиметься між пристроями.

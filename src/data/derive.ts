@@ -114,7 +114,7 @@ export function buildInsights(
       id: "rhythm",
       kind: "rhythm",
       title: `Серія — ${streak} ${pluralDays(streak)}`,
-      text: "Ти тримаєш ритм день за днем. Спокійно й без поспіху.",
+      text: "Ти тримаєш ритм день за днем.",
     });
   }
 

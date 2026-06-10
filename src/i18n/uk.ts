@@ -24,9 +24,16 @@ const uk = {
   streakTitle: "Серія читання",
   streakSub: "день за днем",
   streakUnit: "днів",
-  goalTitle: "Ціль 2026",
+  goalTitle: (y: number) => `Ціль ${y}`,
   goalOf: (n: number) => `з ${n}`,
   goalAhead: (n: number) => `${n} попереду`,
+  goalNone: "без цілі",
+  goalSetCta: "Постав ціль",
+  goalEditTitle: (y: number) => `Ціль на ${y} рік`,
+  goalQuestion: "Скільки книг прочитати?",
+  goalRemove: "Прибрати ціль",
+  goalSavedToast: "Ціль збережено",
+  booksUnitShort: "книг",
 
   // library
   library: "Бібліотека",
@@ -79,7 +86,7 @@ const uk = {
   // insights
   insightsEyebrow: "Тиждень за тижнем",
   insights: "Інсайти",
-  insightsSub: "Спокійні спостереження про твій ритм читання. Без тиску.",
+  insightsSub: "Спокійні спостереження про твій ритм читання.",
 
   // statuses
   statusReading: "Читаю",
@@ -124,7 +131,7 @@ const uk = {
   emptyHomeSub: "Додай книгу, яку зараз читаєш, — і щодня відмічай прогрес.",
   addFirstBook: "Додати книгу",
   emptyLibrary: "Бібліотека порожня. Додай першу книгу кнопкою «+».",
-  insightsEmpty: "Спостереження з'являться, коли ти трохи почитаєш. Без поспіху.",
+  insightsEmpty: "Спостереження з'являться, коли ти трохи почитаєш.",
 
   // analytics — yearly history
   byYears: "За роками",

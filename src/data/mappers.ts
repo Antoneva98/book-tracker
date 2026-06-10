@@ -117,3 +117,16 @@ export function rowToYearStat(r: YearStatRow): YearStat {
 export function yearStatToRow(y: YearStat): YearStatRow {
   return { year: y.year, books: y.books, pages: y.pages };
 }
+
+// ---- goals ----
+export interface GoalRow {
+  year: number;
+  target: number;
+}
+
+/** year → target books. */
+export function goalRowsToMap(rows: GoalRow[]): Record<number, number> {
+  const map: Record<number, number> = {};
+  for (const r of rows) map[r.year] = r.target;
+  return map;
+}
