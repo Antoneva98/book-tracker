@@ -57,11 +57,12 @@ export function LoginScreen() {
             <div className="eyebrow muted mt-4" style={{ textAlign: "center" }}>
               {t.orDivider}
             </div>
-            <form className="stack gap-2 mt-3" onSubmit={magic}>
+            <form className="stack gap-3 mt-3" onSubmit={magic}>
               <input
-                className="input"
+                className="form-input"
                 type="email"
                 inputMode="email"
+                autoComplete="email"
                 placeholder={t.emailPlaceholder}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

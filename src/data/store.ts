@@ -73,7 +73,7 @@ export interface BookStore {
   // actions
   logReading: (pages: number) => void;
   updateProgress: (id: string, val: number) => void;
-  addNote: (type: NoteType, text: string) => void;
+  addNote: (type: NoteType, text: string, page: number) => void;
   deleteNote: (id: string) => void;
   addBook: (input: AddBookInput) => string;
   deleteBook: (id: string) => void;
@@ -228,11 +228,10 @@ export function useBookStore(): BookStore {
   );
 
   const addNote = useCallback(
-    (type: NoteType, text: string) => {
+    (type: NoteType, text: string, page: number) => {
       const cId =
         books.find((b) => b.status === "reading")?.id ?? books[0]?.id;
       if (!cId) return;
-      const page = books.find((b) => b.id === cId)?.read ?? 0;
       const note: Note = {
         id: newId(),
         bookId: cId,

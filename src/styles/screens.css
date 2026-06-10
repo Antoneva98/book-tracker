@@ -90,6 +90,11 @@
 .greet-head {
   padding-top: 8px;
 }
+/* Headers with a right-aligned action (Home logout, Library +) keep clear of
+   the floating theme toggle that sits in the top-right corner. */
+.greet-head.row-between {
+  padding-right: 46px;
+}
 
 /* ---------- card ---------- */
 .card {
@@ -706,6 +711,20 @@
 }
 .composer textarea::placeholder {
   color: var(--c-ink-3);
+}
+.note-page-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.note-page-row .form-label {
+  margin: 0;
+  white-space: nowrap;
+}
+.note-page-row .form-input {
+  width: 96px;
+  padding: 9px 12px;
+  text-align: center;
 }
 .type-pick {
   display: flex;
