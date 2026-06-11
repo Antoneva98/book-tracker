@@ -4,8 +4,8 @@
 
 import type { Book, Cover, CoverStyle, Note, Activity, YearStat } from "../types";
 
-/** The app's "today" anchor. */
-export const TODAY = new Date("2026-06-08T09:00:00");
+/** The app's "today" anchor — the real current day. */
+export const TODAY = new Date();
 
 export function iso(d: Date): string {
   const y = d.getFullYear();
