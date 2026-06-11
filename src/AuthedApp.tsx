@@ -15,7 +15,13 @@ import { InsightsScreen } from "./screens/InsightsScreen";
 import { AddBookScreen } from "./screens/AddBookScreen";
 import { t } from "./i18n/uk";
 
-export function AuthedApp() {
+export function AuthedApp({
+  theme,
+  toggleTheme,
+}: {
+  theme: "light" | "dark";
+  toggleTheme: () => void;
+}) {
   const store = useBookStore();
   const [screen, setScreen] = useState<Screen>("home");
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -62,7 +68,7 @@ export function AuthedApp() {
     );
   }
 
-  const ctx: AppCtx = { ...store, nav, openBook, back, detailId };
+  const ctx: AppCtx = { ...store, nav, openBook, back, detailId, theme, toggleTheme };
   const navActive: Screen =
     screen === "detail" || screen === "addbook" ? "library" : screen;
 

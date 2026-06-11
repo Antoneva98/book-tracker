@@ -39,11 +39,14 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
     nav,
     setGoal,
     signOut,
+    theme,
+    toggleTheme,
   } = ctx;
   const [logging, setLogging] = useState(false);
   const [pages, setPages] = useState(20);
   const [editGoal, setEditGoal] = useState(false);
   const [goalVal, setGoalVal] = useState(12);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const year = TODAY.getFullYear();
   const insights = buildInsights(activity, books, year);
@@ -57,6 +60,47 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
 
   return (
     <div className="screen-scroll fade-up">
+      {/* top bar with menu */}
+      <div className="home-top">
+        <div className="home-menu">
+          <button
+            className="home-menu-btn"
+            aria-label={t.menu}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            <Icon name="menu" size={20} />
+          </button>
+          {menuOpen && (
+            <>
+              <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
+              <div className="menu-pop" role="menu">
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    toggleTheme();
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Icon name={theme === "light" ? "moon" : "sun"} size={17} />
+                  {theme === "light" ? t.themeDark : t.themeLight}
+                </button>
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    signOut();
+                  }}
+                >
+                  <Icon name="logout" size={17} />
+                  {t.signOut}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       {!current ? (
         /* empty library */
         <div className="card mt-5">
@@ -285,15 +329,6 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
           </div>
         </button>
       )}
-
-      {/* sign out */}
-      <button
-        className="btn btn-ghost mt-6"
-        style={{ color: "var(--c-ink-3)" }}
-        onClick={signOut}
-      >
-        <Icon name="logout" size={16} /> {t.signOut}
-      </button>
     </div>
   );
 }

@@ -8,4 +8,6 @@ export interface AppCtx extends BookStore {
   openBook: (id: string) => void;
   back: () => void;
   detailId: string | null;
+  theme: "light" | "dark";
+  toggleTheme: () => void;
 }

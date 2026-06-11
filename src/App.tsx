@@ -2,7 +2,6 @@
 // depending on the auth session.
 
 import { useEffect, useState } from "react";
-import { Icon } from "./components/Icon";
 import { useSession } from "./auth/useSession";
 import { LoginScreen } from "./screens/LoginScreen";
 import { AuthedApp } from "./AuthedApp";
@@ -28,16 +27,11 @@ export default function App() {
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
+  const toggleTheme = () =>
+    setTheme((p) => (p === "light" ? "dark" : "light"));
+
   return (
     <div className="phone" data-theme={theme}>
-      <button
-        className="theme-toggle"
-        onClick={() => setTheme((p) => (p === "light" ? "dark" : "light"))}
-        aria-label={theme === "light" ? "Темна тема" : "Світла тема"}
-      >
-        <Icon name={theme === "light" ? "moon" : "sun"} size={17} />
-      </button>
-
       {loading ? (
         <div className="screen">
           <div className="screen-scroll" style={{ justifyContent: "center", textAlign: "center" }}>
@@ -45,7 +39,7 @@ export default function App() {
           </div>
         </div>
       ) : user ? (
-        <AuthedApp />
+        <AuthedApp theme={theme} toggleTheme={toggleTheme} />
       ) : (
         <div className="screen">
           <LoginScreen />

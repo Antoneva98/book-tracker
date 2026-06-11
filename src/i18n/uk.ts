@@ -187,6 +187,9 @@ const uk = {
   sendMagicLink: "Надіслати посилання",
   magicLinkSent: "Перевір пошту — ми надіслали посилання для входу.",
   signOut: "Вийти",
+  menu: "Меню",
+  themeLight: "Світла тема",
+  themeDark: "Темна тема",
   // loading / errors
   loadingData: "Завантаження…",
   offlineTitle: "Немає з’єднання",
