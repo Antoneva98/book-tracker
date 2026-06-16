@@ -17,6 +17,7 @@ const uk = {
 
   // home
   nowReading: "Зараз читаю",
+  alsoReading: "Також читаю",
   readTodayCta: "Я читав сьогодні",
   markPages: "Відмітити сторінки",
   noReadingNow: "Зараз немає книг у статусі «Читаю».",

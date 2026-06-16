@@ -1,5 +1,6 @@
-// HOME / Головна — daily touchpoint: books in progress (parallel reading),
-// per-book page logger, streak & goal rings, gentle insight teaser.
+// HOME / Головна — daily touchpoint: a hero for the book you're reading now,
+// a switcher of the other in-progress books (parallel reading), then the
+// streak & goal rings and a gentle insight teaser.
 
 import { useState, type CSSProperties } from "react";
 import type { AppCtx } from "../ctx";
@@ -14,7 +15,7 @@ import { buildInsights } from "../data/derive";
 const labelStyle: CSSProperties = {
   fontFamily: "var(--font-display)",
   fontWeight: 700,
-  fontSize: 13,
+  fontSize: 12.5,
   color: "var(--c-ink)",
 };
 
@@ -22,8 +23,8 @@ const cardCol: CSSProperties = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: 10,
-  padding: 16,
+  gap: 8,
+  padding: 14,
 };
 
 export function HomeScreen({ ctx }: { ctx: AppCtx }) {
@@ -42,8 +43,9 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
     theme,
     toggleTheme,
   } = ctx;
-  const [logBookId, setLogBookId] = useState<string | null>(null);
+  const [logging, setLogging] = useState(false);
   const [pages, setPages] = useState(20);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editGoal, setEditGoal] = useState(false);
   const [goalVal, setGoalVal] = useState(12);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -52,15 +54,18 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
   const insights = buildInsights(activity, books, year);
   const teaser = insights[0];
   const goalRemaining = goal ? Math.max(0, goal - finishedThisYear) : 0;
+
   const reading = books.filter((b) => b.status === "reading");
+  const hero = reading.find((b) => b.id === selectedId) ?? reading[0] ?? null;
+  const others = reading.filter((b) => b.id !== hero?.id);
 
   function openGoalEditor() {
     setGoalVal(goal ?? 12);
     setEditGoal(true);
   }
-  function openLogger(id: string) {
-    setLogBookId(id);
-    setPages(20);
+  function selectBook(id: string) {
+    setSelectedId(id);
+    setLogging(false);
   }
 
   return (
@@ -117,7 +122,7 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
             <Icon name="plus" size={18} sw={2.4} /> {t.addFirstBook}
           </button>
         </div>
-      ) : reading.length === 0 ? (
+      ) : !hero ? (
         /* has books, but none in progress */
         <div className="card mt-5">
           <div className="empty-state">
@@ -128,132 +133,151 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
           </button>
         </div>
       ) : (
-        /* books in progress — one logger per book (parallel reading) */
-        <div className="mt-5">
-          <div className="row-between">
-            <span className="eyebrow">{t.nowReading}</span>
-            {doneToday && (
-              <span
+        <>
+          {/* hero — the book you're reading now */}
+          <div className="card mt-5" style={{ padding: 16 }}>
+            <button
+              className="brow"
+              style={{
+                padding: 0,
+                background: "none",
+                boxShadow: "none",
+                border: "none",
+              }}
+              onClick={() => openBook(hero.id)}
+            >
+              <Cover book={hero} style={{ width: 78 }} showTop={false} />
+              <div
+                className="b-info"
                 style={{
-                  display: "inline-flex",
-                  gap: 6,
-                  alignItems: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  alignItems: "flex-start",
+                }}
+              >
+                <span className="eyebrow">{t.nowReading}</span>
+                <div
+                  className="b-title"
+                  style={{ fontSize: 17, whiteSpace: "normal" }}
+                >
+                  {hero.title}
+                </div>
+                <div className="b-author">{hero.author}</div>
+              </div>
+            </button>
+
+            <div className="mt-4">
+              <Progress value={hero.read} max={hero.pages} />
+            </div>
+
+            {!logging ? (
+              <button
+                className="btn btn-primary mt-4"
+                onClick={() => {
+                  setPages(20);
+                  setLogging(true);
+                }}
+              >
+                <Icon name="check" size={18} sw={2.4} /> {t.readTodayCta}
+              </button>
+            ) : (
+              <div
+                className="card mt-4"
+                style={{
+                  background: "var(--c-surface-2)",
+                  boxShadow: "none",
+                  padding: 14,
+                }}
+              >
+                <div className="row-between">
+                  <span
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: "var(--c-ink-2)",
+                    }}
+                  >
+                    {t.howManyPages}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-num)",
+                      fontWeight: 700,
+                      fontSize: 18,
+                      color: "var(--c-accent)",
+                    }}
+                  >
+                    {pages}
+                  </span>
+                </div>
+                <div
+                  className="stepper mt-3"
+                  style={{ background: "var(--c-surface)" }}
+                >
+                  <button onClick={() => setPages((p) => Math.max(0, p - 5))}>
+                    –
+                  </button>
+                  <span className="sv">
+                    {pages} {t.pagesUnit}
+                  </span>
+                  <button onClick={() => setPages((p) => p + 5)}>+</button>
+                </div>
+                <button
+                  className="btn btn-done mt-3"
+                  onClick={() => {
+                    logReading(pages, hero.id);
+                    setLogging(false);
+                  }}
+                >
+                  <Icon name="check" size={18} sw={2.6} /> {t.save}
+                </button>
+              </div>
+            )}
+
+            {doneToday && !logging && (
+              <div
+                className="row-between mt-3"
+                style={{
                   color: "var(--c-good)",
                   fontFamily: "var(--font-display)",
                   fontWeight: 700,
-                  fontSize: 12,
+                  fontSize: 13,
                 }}
               >
-                <Icon name="check" size={14} sw={2.6} /> {t.readToday}
-              </span>
+                <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
+                  <Icon name="check" size={16} sw={2.6} /> {t.readToday}
+                </span>
+              </div>
             )}
           </div>
 
-          <div className="stack gap-3 mt-3">
-            {reading.map((b) => (
-              <div className="card" style={{ padding: 14 }} key={b.id}>
-                <button
-                  className="brow"
-                  style={{
-                    padding: 0,
-                    background: "none",
-                    boxShadow: "none",
-                    border: "none",
-                  }}
-                  onClick={() => openBook(b.id)}
-                >
-                  <Cover book={b} style={{ width: 54 }} showTop={false} />
-                  <div
-                    className="b-info"
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 2,
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <div
-                      className="b-title"
-                      style={{ fontSize: 15, whiteSpace: "normal" }}
-                    >
-                      {b.title}
-                    </div>
-                    <div className="b-author">{b.author}</div>
-                  </div>
-                </button>
-
-                <div className="mt-3">
-                  <Progress value={b.read} max={b.pages} />
-                </div>
-
-                {logBookId === b.id ? (
-                  <div
-                    className="card mt-3"
-                    style={{
-                      background: "var(--c-surface-2)",
-                      boxShadow: "none",
-                      padding: 12,
-                    }}
-                  >
-                    <div className="row-between">
-                      <span
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          fontWeight: 700,
-                          fontSize: 13,
-                          color: "var(--c-ink-2)",
-                        }}
-                      >
-                        {t.howManyPages}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-num)",
-                          fontWeight: 700,
-                          fontSize: 18,
-                          color: "var(--c-accent)",
-                        }}
-                      >
-                        {pages}
-                      </span>
-                    </div>
-                    <div
-                      className="stepper mt-3"
-                      style={{ background: "var(--c-surface)" }}
-                    >
-                      <button onClick={() => setPages((p) => Math.max(0, p - 5))}>
-                        –
-                      </button>
-                      <span className="sv">
-                        {pages} {t.pagesUnit}
-                      </span>
-                      <button onClick={() => setPages((p) => p + 5)}>+</button>
-                    </div>
-                    <button
-                      className="btn btn-done mt-3"
-                      onClick={() => {
-                        logReading(pages, b.id);
-                        setLogBookId(null);
-                      }}
-                    >
-                      <Icon name="check" size={18} sw={2.6} /> {t.save}
-                    </button>
-                  </div>
-                ) : (
+          {/* other books in progress — tap to switch the hero */}
+          {others.length > 0 && (
+            <div className="mt-4">
+              <span className="eyebrow muted">{t.alsoReading}</span>
+              <div className="read-switcher mt-3">
+                {others.map((b) => (
                   <button
-                    className="btn btn-primary mt-3"
-                    onClick={() => openLogger(b.id)}
+                    key={b.id}
+                    className="rs-item"
+                    onClick={() => selectBook(b.id)}
                   >
-                    <Icon name="check" size={18} sw={2.4} /> {t.markPages}
+                    <Cover book={b} showTop={false} />
+                    <div className="rs-info">
+                      <div className="rs-title">{b.title}</div>
+                      <div className="rs-author">{b.author}</div>
+                    </div>
                   </button>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* streak + goal rings */}
+      {/* streak + goal rings (compact) */}
       <div
         className="mt-4"
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
@@ -262,16 +286,16 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
           <Ring
             value={streak}
             max={Math.max(7, streak)}
-            size={88}
-            stroke={9}
+            size={72}
+            stroke={8}
             color="var(--c-warn)"
             num={streak}
             label={t.streakUnit}
-            numSize={28}
+            numSize={24}
           />
           <div style={{ textAlign: "center" }}>
             <div style={labelStyle}>{t.streakTitle}</div>
-            <div style={{ fontSize: 11.5, color: "var(--c-ink-3)", marginTop: 2 }}>
+            <div style={{ fontSize: 11, color: "var(--c-ink-3)", marginTop: 2 }}>
               {t.streakSub}
             </div>
           </div>
@@ -285,17 +309,17 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
           <Ring
             value={goal ? finishedThisYear : 0}
             max={goal ?? 1}
-            size={88}
-            stroke={9}
+            size={72}
+            stroke={8}
             num={`${finishedThisYear}`}
             label={goal ? t.goalOf(goal) : t.goalNone}
-            numSize={28}
+            numSize={24}
           />
           <div>
             <div style={labelStyle}>{t.goalTitle(year)}</div>
             <div
               style={{
-                fontSize: 11.5,
+                fontSize: 11,
                 color: goal ? "var(--c-ink-3)" : "var(--c-accent)",
                 fontWeight: goal ? 400 : 700,
                 marginTop: 2,
