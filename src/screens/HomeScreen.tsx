@@ -1,4 +1,5 @@
-// HOME / Головна — daily touchpoint: current book, page logger, rings, teaser.
+// HOME / Головна — daily touchpoint: books in progress (parallel reading),
+// per-book page logger, streak & goal rings, gentle insight teaser.
 
 import { useState, type CSSProperties } from "react";
 import type { AppCtx } from "../ctx";
@@ -29,7 +30,6 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
   const {
     books,
     activity,
-    current,
     streak,
     doneToday,
     finishedThisYear,
@@ -42,7 +42,7 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
     theme,
     toggleTheme,
   } = ctx;
-  const [logging, setLogging] = useState(false);
+  const [logBookId, setLogBookId] = useState<string | null>(null);
   const [pages, setPages] = useState(20);
   const [editGoal, setEditGoal] = useState(false);
   const [goalVal, setGoalVal] = useState(12);
@@ -52,10 +52,15 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
   const insights = buildInsights(activity, books, year);
   const teaser = insights[0];
   const goalRemaining = goal ? Math.max(0, goal - finishedThisYear) : 0;
+  const reading = books.filter((b) => b.status === "reading");
 
   function openGoalEditor() {
     setGoalVal(goal ?? 12);
     setEditGoal(true);
+  }
+  function openLogger(id: string) {
+    setLogBookId(id);
+    setPages(20);
   }
 
   return (
@@ -101,7 +106,7 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
         </div>
       </div>
 
-      {!current ? (
+      {books.length === 0 ? (
         /* empty library */
         <div className="card mt-5">
           <div className="empty-state">
@@ -112,106 +117,139 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
             <Icon name="plus" size={18} sw={2.4} /> {t.addFirstBook}
           </button>
         </div>
-      ) : (
-        /* currently reading hero */
-        <div className="card mt-5" style={{ padding: 16 }}>
-          <button
-            className="brow"
-            style={{
-              padding: 0,
-              background: "none",
-              boxShadow: "none",
-              border: "none",
-            }}
-            onClick={() => openBook(current.id)}
-          >
-            <Cover book={current} style={{ width: 78 }} showTop={false} />
-            <div
-              className="b-info"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-                alignItems: "flex-start",
-              }}
-            >
-              <span className="eyebrow">{t.nowReading}</span>
-              <div className="b-title" style={{ fontSize: 17, whiteSpace: "normal" }}>
-                {current.title}
-              </div>
-              <div className="b-author">{current.author}</div>
-            </div>
-          </button>
-
-          <div className="mt-4">
-            <Progress value={current.read} max={current.pages} />
+      ) : reading.length === 0 ? (
+        /* has books, but none in progress */
+        <div className="card mt-5">
+          <div className="empty-state">
+            <div className="es-sub">{t.noReadingNow}</div>
           </div>
-
-          {!logging ? (
-            <button className="btn btn-primary mt-4" onClick={() => setLogging(true)}>
-              <Icon name="check" size={18} sw={2.4} /> {t.readTodayCta}
-            </button>
-          ) : (
-            <div
-              className="card mt-4"
-              style={{ background: "var(--c-surface-2)", boxShadow: "none", padding: 14 }}
-            >
-              <div className="row-between">
-                <span
-                  style={{
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 700,
-                    fontSize: 13,
-                    color: "var(--c-ink-2)",
-                  }}
-                >
-                  {t.howManyPages}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "var(--font-num)",
-                    fontWeight: 700,
-                    fontSize: 18,
-                    color: "var(--c-accent)",
-                  }}
-                >
-                  {pages}
-                </span>
-              </div>
-              <div className="stepper mt-3" style={{ background: "var(--c-surface)" }}>
-                <button onClick={() => setPages((p) => Math.max(0, p - 5))}>–</button>
-                <span className="sv">
-                  {pages} {t.pagesUnit}
-                </span>
-                <button onClick={() => setPages((p) => p + 5)}>+</button>
-              </div>
-              <button
-                className="btn btn-done mt-3"
-                onClick={() => {
-                  logReading(pages);
-                  setLogging(false);
+          <button className="btn btn-ghost" onClick={() => nav("library")}>
+            {t.toLibrary}
+          </button>
+        </div>
+      ) : (
+        /* books in progress — one logger per book (parallel reading) */
+        <div className="mt-5">
+          <div className="row-between">
+            <span className="eyebrow">{t.nowReading}</span>
+            {doneToday && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  gap: 6,
+                  alignItems: "center",
+                  color: "var(--c-good)",
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 700,
+                  fontSize: 12,
                 }}
               >
-                <Icon name="check" size={18} sw={2.6} /> {t.save}
-              </button>
-            </div>
-          )}
-
-          {doneToday && !logging && (
-            <div
-              className="row-between mt-3"
-              style={{
-                color: "var(--c-good)",
-                fontFamily: "var(--font-display)",
-                fontWeight: 700,
-                fontSize: 13,
-              }}
-            >
-              <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
-                <Icon name="check" size={16} sw={2.6} /> {t.readToday}
+                <Icon name="check" size={14} sw={2.6} /> {t.readToday}
               </span>
-            </div>
-          )}
+            )}
+          </div>
+
+          <div className="stack gap-3 mt-3">
+            {reading.map((b) => (
+              <div className="card" style={{ padding: 14 }} key={b.id}>
+                <button
+                  className="brow"
+                  style={{
+                    padding: 0,
+                    background: "none",
+                    boxShadow: "none",
+                    border: "none",
+                  }}
+                  onClick={() => openBook(b.id)}
+                >
+                  <Cover book={b} style={{ width: 54 }} showTop={false} />
+                  <div
+                    className="b-info"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 2,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <div
+                      className="b-title"
+                      style={{ fontSize: 15, whiteSpace: "normal" }}
+                    >
+                      {b.title}
+                    </div>
+                    <div className="b-author">{b.author}</div>
+                  </div>
+                </button>
+
+                <div className="mt-3">
+                  <Progress value={b.read} max={b.pages} />
+                </div>
+
+                {logBookId === b.id ? (
+                  <div
+                    className="card mt-3"
+                    style={{
+                      background: "var(--c-surface-2)",
+                      boxShadow: "none",
+                      padding: 12,
+                    }}
+                  >
+                    <div className="row-between">
+                      <span
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontWeight: 700,
+                          fontSize: 13,
+                          color: "var(--c-ink-2)",
+                        }}
+                      >
+                        {t.howManyPages}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-num)",
+                          fontWeight: 700,
+                          fontSize: 18,
+                          color: "var(--c-accent)",
+                        }}
+                      >
+                        {pages}
+                      </span>
+                    </div>
+                    <div
+                      className="stepper mt-3"
+                      style={{ background: "var(--c-surface)" }}
+                    >
+                      <button onClick={() => setPages((p) => Math.max(0, p - 5))}>
+                        –
+                      </button>
+                      <span className="sv">
+                        {pages} {t.pagesUnit}
+                      </span>
+                      <button onClick={() => setPages((p) => p + 5)}>+</button>
+                    </div>
+                    <button
+                      className="btn btn-done mt-3"
+                      onClick={() => {
+                        logReading(pages, b.id);
+                        setLogBookId(null);
+                      }}
+                    >
+                      <Icon name="check" size={18} sw={2.6} /> {t.save}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="btn btn-primary mt-3"
+                    onClick={() => openLogger(b.id)}
+                  >
+                    <Icon name="check" size={18} sw={2.4} /> {t.markPages}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -273,10 +311,7 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
       {editGoal && (
         <div className="card mt-4">
           <span className="eyebrow">{t.goalEditTitle(year)}</span>
-          <div
-            className="mt-2"
-            style={{ fontSize: 13, color: "var(--c-ink-2)" }}
-          >
+          <div className="mt-2" style={{ fontSize: 13, color: "var(--c-ink-2)" }}>
             {t.goalQuestion}
           </div>
           <div className="stepper mt-3">

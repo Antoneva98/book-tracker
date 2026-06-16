@@ -18,6 +18,9 @@ const uk = {
   // home
   nowReading: "Зараз читаю",
   readTodayCta: "Я читав сьогодні",
+  markPages: "Відмітити сторінки",
+  noReadingNow: "Зараз немає книг у статусі «Читаю».",
+  toLibrary: "До бібліотеки",
   howManyPages: "Скільки сторінок?",
   save: "Зберегти",
   readToday: "Прочитано сьогодні",

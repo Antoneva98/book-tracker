@@ -72,7 +72,7 @@ export interface BookStore {
   loadError: boolean;
   migrationPrompt: boolean;
   // actions
-  logReading: (pages: number) => void;
+  logReading: (pages: number, bookId?: string) => void;
   updateProgress: (id: string, val: number) => void;
   addNote: (type: NoteType, text: string, page: number) => void;
   deleteNote: (id: string) => void;
@@ -170,8 +170,11 @@ export function useBookStore(): BookStore {
   const goal = goals[YEAR] ?? null;
 
   const logReading = useCallback(
-    (pages: number) => {
-      const cBook = books.find((b) => b.status === "reading");
+    (pages: number, bookId?: string) => {
+      // log to the chosen book (for parallel reading), else the first reading one
+      const cBook = bookId
+        ? books.find((b) => b.id === bookId)
+        : books.find((b) => b.status === "reading");
       const prevBooks = books;
       const prevActivity = activity;
       const prevDone = doneToday;
