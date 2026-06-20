@@ -89,8 +89,13 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const target = event.notification.data?.url || "./";
+  const isExternal =
+    /^https?:\/\//i.test(target) && !target.startsWith(self.location.origin);
   event.waitUntil(
     (async () => {
+      // external links (e.g. a survey) — always open in a new window
+      if (isExternal) return self.clients.openWindow(target);
+      // internal — focus the running app if any, else open it
       const all = await self.clients.matchAll({
         type: "window",
         includeUncontrolled: true,
