@@ -22,6 +22,23 @@ const uk = {
   markPages: "Відмітити сторінки",
   noReadingNow: "Зараз немає книг у статусі «Читаю».",
   toLibrary: "До бібліотеки",
+
+  // notifications
+  menuNotifications: "Сповіщення",
+  notifTitle: "Сповіщення",
+  notifSub: "Щоденне нагадування читати.",
+  notifEnable: "Увімкнути нагадування",
+  notifDisable: "Вимкнути нагадування",
+  notifTimeLabel: "Час нагадування",
+  notifOnToast: "Нагадування увімкнено",
+  notifOffToast: "Нагадування вимкнено",
+  notifDenied:
+    "Сповіщення заблоковані. Дозволь їх у налаштуваннях, щоб увімкнути нагадування.",
+  notifUnsupported: "Цей пристрій або браузер не підтримує сповіщення.",
+  notifIOSInstall:
+    "Щоб отримувати нагадування на iPhone, спершу додай застосунок на екран «Початок» через Safari.",
+  notifNotReady: "Сповіщення ще не налаштовані на сервері.",
+  notifHour: (h: number) => `${String(h).padStart(2, "0")}:00`,
   howManyPages: "Скільки сторінок?",
   save: "Зберегти",
   readToday: "Прочитано сьогодні",

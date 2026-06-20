@@ -3,6 +3,7 @@
 
 import { supabase } from "./supabase";
 import type { Activity, Book, Note, YearStat } from "../types";
+import type { PushSub } from "../lib/push";
 import {
   activityRowsToMap,
   bookToRow,
@@ -56,6 +57,53 @@ export async function setGoal(year: number, target: number): Promise<void> {
 
 export async function deleteGoal(year: number): Promise<void> {
   const { error } = await supabase.from("goals").delete().eq("year", year);
+  if (error) throw new Error(error.message);
+}
+
+// ---- push notifications ----
+export async function savePushSubscription(s: PushSub): Promise<void> {
+  const { error } = await supabase
+    .from("push_subscriptions")
+    .upsert(
+      { endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth },
+      { onConflict: "endpoint" },
+    );
+  if (error) throw new Error(error.message);
+}
+
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+  const { error } = await supabase
+    .from("push_subscriptions")
+    .delete()
+    .eq("endpoint", endpoint);
+  if (error) throw new Error(error.message);
+}
+
+export interface ReminderSettings {
+  enabled: boolean;
+  remind_hour: number;
+}
+
+/** Returns the user's reminder settings, or null if unset / table missing. */
+export async function fetchReminderSettings(): Promise<ReminderSettings | null> {
+  const { data, error } = await supabase
+    .from("reminder_settings")
+    .select("enabled, remind_hour")
+    .maybeSingle();
+  if (error) return null;
+  return data ?? null;
+}
+
+export async function saveReminderSettings(s: ReminderSettings): Promise<void> {
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth.user?.id;
+  if (!userId) throw new Error("not-authenticated");
+  const { error } = await supabase
+    .from("reminder_settings")
+    .upsert(
+      { user_id: userId, enabled: s.enabled, remind_hour: s.remind_hour },
+      { onConflict: "user_id" },
+    );
   if (error) throw new Error(error.message);
 }
 

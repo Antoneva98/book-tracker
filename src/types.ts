@@ -10,7 +10,8 @@ export type Screen =
   | "analytics"
   | "notes"
   | "insights"
-  | "addbook";
+  | "addbook"
+  | "notifications";
 
 export interface Cover {
   bg: string;

@@ -88,6 +88,16 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
                 <button
                   className="menu-item"
                   onClick={() => {
+                    setMenuOpen(false);
+                    nav("notifications");
+                  }}
+                >
+                  <Icon name="bell" size={17} />
+                  {t.menuNotifications}
+                </button>
+                <button
+                  className="menu-item"
+                  onClick={() => {
                     toggleTheme();
                     setMenuOpen(false);
                   }}

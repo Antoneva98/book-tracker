@@ -66,3 +66,38 @@ self.addEventListener("fetch", (event) => {
     })(),
   );
 });
+
+/* ---------- push notifications (daily reading reminder) ---------- */
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  const title = data.title || "Трекер читання";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "📖 Час почитати",
+      icon: "./icon-192.png",
+      badge: "./icon-192.png",
+      data: { url: data.url || "./" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url || "./";
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const existing = all.find((c) => "focus" in c);
+      if (existing) return existing.focus();
+      return self.clients.openWindow(target);
+    })(),
+  );
+});

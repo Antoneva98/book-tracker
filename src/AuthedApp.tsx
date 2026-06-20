@@ -13,6 +13,7 @@ import { AnalyticsScreen } from "./screens/AnalyticsScreen";
 import { NotesScreen } from "./screens/NotesScreen";
 import { InsightsScreen } from "./screens/InsightsScreen";
 import { AddBookScreen } from "./screens/AddBookScreen";
+import { NotificationsScreen } from "./screens/NotificationsScreen";
 import { t } from "./i18n/uk";
 
 export function AuthedApp({
@@ -70,7 +71,11 @@ export function AuthedApp({
 
   const ctx: AppCtx = { ...store, nav, openBook, back, detailId, theme, toggleTheme };
   const navActive: Screen =
-    screen === "detail" || screen === "addbook" ? "library" : screen;
+    screen === "detail" || screen === "addbook"
+      ? "library"
+      : screen === "notifications"
+        ? "home"
+        : screen;
 
   return (
     <div className="screen">
@@ -86,6 +91,7 @@ export function AuthedApp({
         {screen === "notes" && <NotesScreen ctx={ctx} />}
         {screen === "insights" && <InsightsScreen ctx={ctx} />}
         {screen === "addbook" && <AddBookScreen ctx={ctx} />}
+        {screen === "notifications" && <NotificationsScreen ctx={ctx} />}
       </div>
 
       <div className="toast" data-show={!!store.toastMsg}>
