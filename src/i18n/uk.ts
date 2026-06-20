@@ -97,6 +97,7 @@ const uk = {
 
   // notes
   composerPlaceholder: "Запиши думку, цитату чи як це застосувати…",
+  noteForBook: (title: string) => `До книги: «${title}»`,
   notePage: "Сторінка",
   noteAddedToast: "Нотатку додано",
   noNotes: "Ще немає нотаток.",

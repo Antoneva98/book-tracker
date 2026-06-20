@@ -31,6 +31,8 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
   const {
     books,
     activity,
+    currentId,
+    setCurrent,
     streak,
     doneToday,
     finishedThisYear,
@@ -45,7 +47,6 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
   } = ctx;
   const [logging, setLogging] = useState(false);
   const [pages, setPages] = useState(20);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editGoal, setEditGoal] = useState(false);
   const [goalVal, setGoalVal] = useState(12);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -56,7 +57,8 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
   const goalRemaining = goal ? Math.max(0, goal - finishedThisYear) : 0;
 
   const reading = books.filter((b) => b.status === "reading");
-  const hero = reading.find((b) => b.id === selectedId) ?? reading[0] ?? null;
+  // hero = the user's selected current book (persisted in the store)
+  const hero = reading.find((b) => b.id === currentId) ?? reading[0] ?? null;
   const others = reading.filter((b) => b.id !== hero?.id);
 
   function openGoalEditor() {
@@ -64,7 +66,7 @@ export function HomeScreen({ ctx }: { ctx: AppCtx }) {
     setEditGoal(true);
   }
   function selectBook(id: string) {
-    setSelectedId(id);
+    setCurrent(id);
     setLogging(false);
   }
 

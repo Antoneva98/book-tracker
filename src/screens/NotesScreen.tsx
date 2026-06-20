@@ -47,6 +47,14 @@ export function NotesScreen({ ctx }: { ctx: AppCtx }) {
             </button>
           ))}
         </div>
+        {current && (
+          <div
+            className="mt-3"
+            style={{ fontSize: 12, fontWeight: 700, color: "var(--c-accent)" }}
+          >
+            {t.noteForBook(current.title)}
+          </div>
+        )}
         <textarea
           className="mt-3"
           value={text}

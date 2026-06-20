@@ -63,6 +63,7 @@ export interface BookStore {
   yearStats: YearStat[];
   current: Book | null;
   currentId: string | null;
+  setCurrent: (id: string) => void;
   streak: number;
   doneToday: boolean;
   finishedThisYear: number;
@@ -94,6 +95,9 @@ export function useBookStore(): BookStore {
   const [yearStats, setYearStats] = useState<YearStat[]>([]);
   const [goals, setGoals] = useState<Record<number, number>>({});
   const [doneToday, setDoneToday] = useState(false);
+  // the book the user has picked as "current" on Home — persists across
+  // navigation (lives in the store, not the screen). null = auto-pick.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [migrationPrompt, setMigrationPrompt] = useState(false);
@@ -149,10 +153,12 @@ export function useBookStore(): BookStore {
     void load();
   }, [load]);
 
-  const currentId = useMemo(
-    () => books.find((b) => b.status === "reading")?.id ?? books[0]?.id ?? null,
-    [books],
-  );
+  const currentId = useMemo(() => {
+    // honour the user's pick if it still exists; otherwise auto-pick
+    if (selectedId && books.some((b) => b.id === selectedId)) return selectedId;
+    return books.find((b) => b.status === "reading")?.id ?? books[0]?.id ?? null;
+  }, [books, selectedId]);
+  const setCurrent = useCallback((id: string) => setSelectedId(id), []);
   const current = useMemo(
     () => books.find((b) => b.id === currentId) ?? null,
     [books, currentId],
@@ -171,10 +177,10 @@ export function useBookStore(): BookStore {
 
   const logReading = useCallback(
     (pages: number, bookId?: string) => {
-      // log to the chosen book (for parallel reading), else the first reading one
+      // log to the chosen book (for parallel reading), else the current one
       const cBook = bookId
         ? books.find((b) => b.id === bookId)
-        : books.find((b) => b.status === "reading");
+        : books.find((b) => b.id === currentId);
       const prevBooks = books;
       const prevActivity = activity;
       const prevDone = doneToday;
@@ -207,7 +213,7 @@ export function useBookStore(): BookStore {
         }
       })();
     },
-    [books, activity, doneToday, toast],
+    [books, activity, doneToday, currentId, toast],
   );
 
   const updateProgress = useCallback(
@@ -237,8 +243,8 @@ export function useBookStore(): BookStore {
 
   const addNote = useCallback(
     (type: NoteType, text: string, page: number) => {
-      const cId =
-        books.find((b) => b.status === "reading")?.id ?? books[0]?.id;
+      // attach to the currently selected book (persists across navigation)
+      const cId = currentId;
       if (!cId) return;
       const note: Note = {
         id: newId(),
@@ -256,7 +262,7 @@ export function useBookStore(): BookStore {
         toast(t.saveFailed);
       });
     },
-    [books, notes, toast],
+    [currentId, notes, toast],
   );
 
   const deleteNote = useCallback(
@@ -389,6 +395,7 @@ export function useBookStore(): BookStore {
     yearStats,
     current,
     currentId,
+    setCurrent,
     streak,
     doneToday,
     finishedThisYear,
