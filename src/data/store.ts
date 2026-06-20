@@ -20,6 +20,7 @@ import { signOut as authSignOut } from "../auth/useSession";
 
 const LEGACY_KEY = "svitlo-book-tracker";
 const MIGRATED_KEY = "svitlo-migrated";
+const SELECTED_KEY = "svitlo-current-book";
 const TODAY_ISO = iso(daysAgo(0));
 const YEAR = TODAY.getFullYear();
 
@@ -96,8 +97,14 @@ export function useBookStore(): BookStore {
   const [goals, setGoals] = useState<Record<number, number>>({});
   const [doneToday, setDoneToday] = useState(false);
   // the book the user has picked as "current" on Home — persists across
-  // navigation (lives in the store, not the screen). null = auto-pick.
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // navigation AND app restarts (cached in localStorage). null = auto-pick.
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(SELECTED_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [migrationPrompt, setMigrationPrompt] = useState(false);
@@ -158,7 +165,14 @@ export function useBookStore(): BookStore {
     if (selectedId && books.some((b) => b.id === selectedId)) return selectedId;
     return books.find((b) => b.status === "reading")?.id ?? books[0]?.id ?? null;
   }, [books, selectedId]);
-  const setCurrent = useCallback((id: string) => setSelectedId(id), []);
+  const setCurrent = useCallback((id: string) => {
+    setSelectedId(id);
+    try {
+      localStorage.setItem(SELECTED_KEY, id);
+    } catch {
+      /* storage unavailable — selection still works for this session */
+    }
+  }, []);
   const current = useMemo(
     () => books.find((b) => b.id === currentId) ?? null,
     [books, currentId],
