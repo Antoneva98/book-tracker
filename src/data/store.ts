@@ -13,7 +13,7 @@ import type {
 } from "../types";
 import { t } from "../i18n/uk";
 import { coverFor, daysAgo, iso, TODAY, YEARLY_HISTORY } from "./seed";
-import { baseStreak, booksCompletedInYear } from "./derive";
+import { baseStreak, booksCompletedInYear, progressPatch } from "./derive";
 import * as repo from "./repo";
 import { runMigration } from "./migrate";
 import { signOut as authSignOut } from "../auth/useSession";
@@ -199,24 +199,26 @@ export function useBookStore(): BookStore {
       const prevActivity = activity;
       const prevDone = doneToday;
       const newTotal = (activity[TODAY_ISO] || 0) + pages;
-      if (cBook) {
+      // logging pages can finish the book, same as editing progress by hand
+      const patch = cBook
+        ? progressPatch(cBook, cBook.read + pages, TODAY_ISO)
+        : null;
+      if (cBook && patch) {
         setBooks((bs) =>
-          bs.map((b) =>
-            b.id === cBook.id
-              ? { ...b, read: Math.min(b.pages, b.read + pages) }
-              : b,
-          ),
+          bs.map((b) => (b.id === cBook.id ? { ...b, ...patch } : b)),
         );
       }
       setActivity((a) => ({ ...a, [TODAY_ISO]: newTotal }));
       setDoneToday(true);
-      toast(t.loggedToast(pages));
+      toast(
+        patch?.status === "completed" && cBook?.status !== "completed"
+          ? t.bookCompletedToast
+          : t.loggedToast(pages),
+      );
       void (async () => {
         try {
-          if (cBook) {
-            await repo.updateBook(cBook.id, {
-              read: Math.min(cBook.pages, cBook.read + pages),
-            });
+          if (cBook && patch) {
+            await repo.updateBook(cBook.id, patch);
           }
           await repo.setActivity(TODAY_ISO, newTotal);
         } catch {
@@ -235,15 +237,10 @@ export function useBookStore(): BookStore {
       const target = books.find((b) => b.id === id);
       if (!target) return;
       const prevBooks = books;
-      const done = val >= target.pages;
-      const patch: Partial<Book> = {
-        read: val,
-        status: done ? "completed" : target.status,
-        finish: done ? TODAY_ISO : target.finish,
-      };
+      const patch = progressPatch(target, val, TODAY_ISO);
       setBooks((bs) => bs.map((b) => (b.id === id ? { ...b, ...patch } : b)));
       toast(
-        done && target.status !== "completed"
+        patch.status === "completed" && target.status !== "completed"
           ? t.bookCompletedToast
           : t.progressUpdatedToast,
       );

@@ -54,6 +54,25 @@ export function booksCompletedInYear(books: Book[], year: number): number {
   ).length;
 }
 
+/**
+ * Patch for a book whose page count moves to `read`. Reaching the last page
+ * flips it to completed and stamps the finish date; an already-completed book
+ * keeps its original finish date.
+ */
+export function progressPatch(
+  book: Book,
+  read: number,
+  today: string,
+): Partial<Book> {
+  const val = Math.min(book.pages, Math.max(0, read));
+  const justDone = val >= book.pages && book.status !== "completed";
+  return {
+    read: val,
+    status: justDone ? "completed" : book.status,
+    finish: justDone ? today : book.finish,
+  };
+}
+
 export interface MonthStat {
   monthIdx: number; // 0..11
   pages: number;
